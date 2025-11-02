@@ -2,6 +2,7 @@
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
+  depends_on = [module.vpc  ]
 
   name               = "${var.environment}-eks-cluster"
   kubernetes_version = "1.29"
