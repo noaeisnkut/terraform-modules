@@ -16,5 +16,8 @@ The repository is organized as follows:
 terragrunt run-all init
 terragrunt run-all plan
 terragrunt run-all apply
+
+
+
 **module infra**:
 <img width="343" height="665" alt="image" src="https://github.com/user-attachments/assets/4283f59f-5431-4d2a-8b80-bcec01ed944a" />
