@@ -14,6 +14,22 @@ When I run terragrunt run-all apply, Terragrunt orchestrates the deployment of a
 - Root Configuration (root.hcl)
 Terragrunt first loads the global configuration, including remote state backend (S3), state locking (DynamoDB), and shared variables. At this stage, no actual resources are created - it only sets up where state will be stored.
 
+- providers.tf:
+Terraform collects all required_providers from:
+The root module
+All child modules (recursively)
+Terraform downloads and installs the providers locally (in .terraform/plugins/).
+This is important: it doesn’t install anything on AWS, Kubernetes, or Helm itself.
+It just makes the plugins available for Terraform to talk to the remote systems.
+**Before applying any resources, Terraform ensures:**
+All required providers are installed
+Correct versions are used
+Modules then use these providers:
+If i try to apply a module that needs a provider (like Kubernetes or Helm) without the system knowing this providers exists and ready to install them, Terraform will fail
+This prevents you from “running on a cluster without the provider configured”
+**Terraform forces you to declare providers first, ensuring that no module runs against a system (AWS, Kubernetes, Helm, etc.) before Terraform has the necessary plugin ready.**
+
+Make them available to all modules that reference them
 - Environment-Specific Config (root/live/{dev,prod}/terragrunt.hcl)
 Terragrunt scans the environment folder and builds a dependency graph between modules. Each module knows which outputs from other modules it requires. Providers (AWS, Kubernetes, Helm) are initialized, and module sources are downloaded.
 
@@ -45,7 +61,7 @@ In the case of the Flask app, the code inside the pod uses boto3 – the AWS SDK
 Additionally, system pods running in the kube-system namespace, such as the ALB Ingress Controller, watch for Ingress resources like ingress.yaml. When an Ingress resource is applied, the ALB controller automatically provisions an Application Load Balancer (ALB) and updates the DNS/endpoint. This ensures that external traffic can reach the correct service in the cluster using the ALB address.
 This setup ensures that permissions and pods are securely and centrally managed through OIDC and IRSA, while traffic is properly routed through the ALB managed by the ingress controller.
 
-**his command is meant to update your kubeconfig file (usually ~/.kube/config) so that you can connect to your EKS cluster using kubectl:**
+**This command is meant to update your kubeconfig file (usually ~/.kube/config) so that you can connect to your EKS cluster using kubectl:**
 aws eks update-kubeconfig --name dev-eks-cluster --region us-east-1 
 **or in the other cluster:**
 aws eks update-kubeconfig --name prod-eks-cluster --region us-east-1
