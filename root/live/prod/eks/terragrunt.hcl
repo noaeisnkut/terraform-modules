@@ -1,3 +1,4 @@
+#prod
 include "root" {
   path = "../../../root.hcl"
 }
