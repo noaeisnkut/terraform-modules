@@ -3,6 +3,7 @@ resource "azurerm_user_assigned_identity" "alb_controller" {
   resource_group_name = var.resource_group_name
   location            = var.location
 }
+
 resource "azurerm_federated_identity_credential" "alb_controller" {
   name                = "${var.name}-federated"
   resource_group_name = var.resource_group_name
@@ -18,6 +19,7 @@ resource "azurerm_role_assignment" "alb_identity_network" {
   principal_id         = azurerm_user_assigned_identity.alb_controller.principal_id
 }
 
+# --- 2. HELM CONTROLLER (The Brain) ---
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
   repository       = "oci://mcr.microsoft.com/application-lb/charts"
@@ -30,9 +32,87 @@ resource "helm_release" "alb_controller" {
   {
     name  = "albController.podIdentity.clientID"
     value = azurerm_user_assigned_identity.alb_controller.client_id
+  },
+  {
+    name  = "albController.installGatewayApiCRDs"
+    value = "true"
   }
 ]
 
 
   depends_on = [azurerm_federated_identity_credential.alb_controller]
+}
+
+# --- 3. KUBERNETES MANIFESTS (The Configuration) ---
+
+# First, create the ApplicationLoadBalancer (The Azure resource trigger)
+resource "kubernetes_manifest" "alb_resource" {
+  manifest = {
+    apiVersion = "alb.networking.azure.io/v1"
+    kind       = "ApplicationLoadBalancer"
+    metadata = {
+      name      = var.alb_resource_name
+      namespace = var.namespace
+    }
+    spec = {
+      associations = [{ subnetId = var.alb_subnet_id }]
+    }
+  }
+  depends_on = [helm_release.alb_controller]
+}
+
+# Second, create the Gateway
+resource "kubernetes_manifest" "gateway" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "Gateway"
+    metadata = {
+      name      = var.gateway_name
+      namespace = var.namespace
+    }
+    spec = {
+      gatewayClassName = "azure-alb-external"
+      listeners = [{
+        name     = "http"
+        port     = 80
+        protocol = "HTTP"
+        allowedRoutes = { namespaces = { from = "All" } }
+      }]
+    }
+  }
+  depends_on = [kubernetes_manifest.alb_resource]
+}
+
+# Third, create the Bridge to Istio
+resource "kubernetes_manifest" "istio_http_route" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = var.route_name
+      namespace = var.istio_namespace
+    }
+    spec = {
+      parentRefs = [{
+        name      = var.gateway_name
+        namespace = var.namespace
+      }]
+      rules = [{
+        matches = [{ path = { type = "PathPrefix", value = "/" } }]
+        backendRefs = [{
+          name = var.istio_svc_name
+          port = 80
+        }]
+      }]
+    }
+  }
+  depends_on = [kubernetes_manifest.gateway]
+}
+
+resource "aws_route53_record" "alb_dns" {
+  zone_id = var.route53_zone_id
+  name    = var.domain_name
+  type    = "CNAME"
+  ttl     = 300
+  records = [data.kubernetes_resource.gateway_status.object.status.addresses[0].value]
 }
