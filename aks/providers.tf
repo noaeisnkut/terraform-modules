@@ -1,22 +1,22 @@
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.10"
 
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "4.60.0"
+    }
+    azapi = {
+      source  = "azure/azapi"
+      version = "2.2.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.20"
+      version = "3.0.1"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.8"
+      version = "3.1.1"
     }
   }
-}
-
-provider "aws" {
-  region = var.region
 }

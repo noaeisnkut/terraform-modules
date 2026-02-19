@@ -1,22 +1,20 @@
-variable "environment" {
+variable "name" {
   type        = string
-  description = "Environment name (dev/prod)"
+  description = "Name of the subnet"
 }
 
-variable "vpc_cidr" {
-  type = string
-  default = "10.120.0.0/16"
-  description = "CIDR block of the environment"
-}
-
-variable "num_of_azs" {
-  type = number
-  default = 1
-  description = "how many azs in our vpc"
-}
-
-variable "region" {
-  description = "AWS region for resource deployment"
+variable "resource_group_name" {
   type        = string
-  default     = "us-east-1"
+  description = "The name of the existing Resource Group"
+}
+
+variable "vnet_name" {
+  type        = string
+  description = "The name of the existing Virtual Network"
+}
+
+variable "address_prefix" {
+  type        = string
+  default     = "10.0.1.0/28"
+  description = "The CIDR block for the subnet"
 }

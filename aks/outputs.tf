@@ -1,28 +1,8 @@
-output "cluster_name" {
-  description = "EKS cluster name"
-  value       = module.eks.cluster_name
-}
-
-output "cluster_endpoint" {
-  description = "EKS API endpoint"
-  value       = module.eks.cluster_endpoint
-}
-
-output "cluster_certificate_authority_data" {
-  description = "EKS cluster CA data"
-  value       = module.eks.cluster_certificate_authority_data
-}
-
-
 output "oidc_issuer_url" {
-  description = "The URL of the cluster's OIDC issuer"
-  value       = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
+  value = azurerm_kubernetes_cluster.mycluster.oidc_issuer_url
 }
 
-
-
-output "cluster_token" {
-  description = "Authentication token for the EKS cluster"
-  value       = data.aws_eks_cluster_auth.this.token
+output "client_key" {
+  value     = azurerm_kubernetes_cluster.mycluster.kube_config.0.client_key
   sensitive = true
 }

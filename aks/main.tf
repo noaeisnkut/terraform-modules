@@ -14,7 +14,7 @@ resource "azurerm_kubernetes_cluster" "mycluster" {
   network_profile {
     network_plugin      = "azure"
     network_plugin_mode = "overlay" 
-    network_dataplane   = "cilium" 
+    network_data_plane   = "cilium" 
   }
 
   default_node_pool {
@@ -28,14 +28,6 @@ resource "azurerm_kubernetes_cluster" "mycluster" {
 resource "azapi_update_resource" "enable_nap" {
   type        = "Microsoft.ContainerService/managedClusters@2024-09-01"
   resource_id = azurerm_kubernetes_cluster.mycluster.id
-
-  body = jsonencode({
-    properties = {
-      nodeProvisioningProfile = {
-        mode = "Auto"
-      }
-    }
-  })
 }
 
 resource "azurerm_user_assigned_identity" "flask_app" {
@@ -53,7 +45,7 @@ resource "azurerm_federated_identity_credential" "flask_app" {
   subject             = "system:serviceaccount:${var.workload_sa_namespace}:${var.workload_sa_name}"
 }
 
-resource "kubernetes_service_account" "flask_app_sa" {
+resource "kubernetes_service_account_v1" "flask_app_sa" {
   metadata {
     name      = var.workload_sa_name
     namespace = var.workload_sa_namespace

@@ -1,28 +1,39 @@
-variable "project_name" {
-  type        = string
-  description = "Name of the ArgoCD project"
-}
-
-variable "apps" {
-  type = map(object({
-    name                  : string
-    repo_url              : string
-    target_revision       : string
-    path                  : string
-    helm_value_files      : list(string)
-    destination_namespace : string
-    destination_server    : string
-  }))
-  description = "Manifest-based applications to deploy via ArgoCD"
-}
-
 variable "argocd_version" {
-  type    = string
-  default = "9.0.5"
+  type        = string
+  default     = "7.7.0"
+  description = "The version of the ArgoCD Helm chart to install"
 }
 
-variable "cluster_name" {}
-variable "cluster_endpoint" {}
-variable "cluster_certificate_authority_data" {}
-variable "cluster_token" {}
-variable "oidc_issuer_url" {}
+variable "cluster_endpoint" {
+  type        = string
+  description = "The host (URL) of the AKS API server"
+}
+
+variable "cluster_ca_certificate" {
+  type        = string
+  description = "The public CA certificate of the AKS cluster"
+}
+
+# Note: If you use the kube_config password/token instead of certs, 
+# you might replace these with a 'cluster_password' variable.
+variable "client_certificate" {
+  type        = string
+  description = "The client certificate for authenticating to the AKS cluster"
+}
+
+variable "client_key" {
+  type        = string
+  sensitive   = true
+  description = "The client key for authenticating to the AKS cluster"
+}
+
+variable "oidc_issuer_url" {
+  type        = string
+  description = "The OIDC issuer URL from the AKS cluster for Workload Identity"
+  default     = "" # Optional, keep it if your ArgoCD needs to assume Azure Roles
+}
+variable "argocd_config" {
+  type = object({
+    hostname = string
+  })
+}
