@@ -14,22 +14,19 @@ resource "azurerm_kubernetes_cluster" "mycluster" {
   network_profile {
     network_plugin      = "azure"
     network_plugin_mode = "overlay" 
-    network_data_plane   = "cilium" 
+    network_data_plane  = "cilium" 
   }
-
   default_node_pool {
     name                = "systempool"
     vm_size             = "Standard_DS2_v2"
     node_count          = 1
     auto_scaling_enabled = false 
+    only_critical_addons_enabled = true
+  }
+  node_provisioning_profile {
+    mode = "Auto"
   }
 }
-
-resource "azapi_update_resource" "enable_nap" {
-  type        = "Microsoft.ContainerService/managedClusters@2024-09-01"
-  resource_id = azurerm_kubernetes_cluster.mycluster.id
-}
-
 resource "azurerm_user_assigned_identity" "flask_app" {
   name                = "${var.environment}-flask-app-identity"
   location            = var.location
