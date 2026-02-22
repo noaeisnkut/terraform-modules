@@ -1,8 +1,8 @@
 output "argocd" {
-  description = "Argocd_Info"
   value = {
-    username = "admin",
-    password = nonsensitive(data.kubernetes_secret_v1.argocd-secret.data.password),
-    url      = var.argocd_config.hostname
+    username = "admin"
+    password = nonsensitive(data.kubernetes_secret_v1.argocd-secret.data.password)
+    svc_name = "argocd-server"  
+    svc_port = 80
   }
 }

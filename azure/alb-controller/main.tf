@@ -1,3 +1,6 @@
+###########################
+# Azure Identity
+###########################
 resource "azurerm_user_assigned_identity" "alb_controller" {
   name                = "${var.name}-identity"
   resource_group_name = var.resource_group_name
@@ -19,6 +22,9 @@ resource "azurerm_role_assignment" "alb_identity_network" {
   principal_id         = azurerm_user_assigned_identity.alb_controller.principal_id
 }
 
+###########################
+# ALB Controller Helm
+###########################
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
   repository       = "oci://mcr.microsoft.com/application-lb/charts"
@@ -28,20 +34,22 @@ resource "helm_release" "alb_controller" {
   version          = var.controller_version
 
   set = [
-  {
-    name  = "albController.podIdentity.clientID"
-    value = azurerm_user_assigned_identity.alb_controller.client_id
-  },
-  {
-    name  = "albController.installGatewayApiCRDs"
-    value = "true"
-  }
-]
-
+    {
+      name  = "albController.podIdentity.clientID"
+      value = azurerm_user_assigned_identity.alb_controller.client_id
+    },
+    {
+      name  = "albController.installGatewayApiCRDs"
+      value = "true"
+    }
+  ]
 
   depends_on = [azurerm_federated_identity_credential.alb_controller]
 }
 
+###########################
+# ALB Resource
+###########################
 resource "kubernetes_manifest" "alb_resource" {
   manifest = {
     apiVersion = "alb.networking.azure.io/v1"
@@ -57,6 +65,9 @@ resource "kubernetes_manifest" "alb_resource" {
   depends_on = [helm_release.alb_controller]
 }
 
+###########################
+# Gateway
+###########################
 resource "kubernetes_manifest" "gateway" {
   manifest = {
     apiVersion = "gateway.networking.k8s.io/v1"
@@ -78,24 +89,28 @@ resource "kubernetes_manifest" "gateway" {
   depends_on = [kubernetes_manifest.alb_resource]
 }
 
-resource "kubernetes_manifest" "istio_http_route" {
+###########################
+# HTTPRoute for ArgoCD
+###########################
+resource "kubernetes_manifest" "http_route_argocd" {
   manifest = {
     apiVersion = "gateway.networking.k8s.io/v1"
     kind       = "HTTPRoute"
     metadata = {
-      name      = var.route_name
-      namespace = var.istio_namespace
+      name      = "argocd-route"
+      namespace = var.argocd_namespace
     }
     spec = {
       parentRefs = [{
         name      = var.gateway_name
         namespace = var.namespace
       }]
+      hostnames = [var.argocd_hostname]
       rules = [{
         matches = [{ path = { type = "PathPrefix", value = "/" } }]
         backendRefs = [{
-          name = var.istio_svc_name
-          port = 80
+          name = var.argocd_svc_name
+          port = var.argocd_svc_port
         }]
       }]
     }
@@ -103,3 +118,31 @@ resource "kubernetes_manifest" "istio_http_route" {
   depends_on = [kubernetes_manifest.gateway]
 }
 
+###########################
+# HTTPRoute for Flask via Istio
+###########################
+resource "kubernetes_manifest" "http_route_flask" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = "flask-route"
+      namespace = var.flask_namespace
+    }
+    spec = {
+      parentRefs = [{
+        name      = var.gateway_name
+        namespace = var.namespace
+      }]
+      hostnames = [var.flask_hostname]
+      rules = [{
+        matches = [{ path = { type = "PathPrefix", value = "/" } }]
+        backendRefs = [{
+          name = var.istio_svc_name
+          port = var.istio_svc_port
+        }]
+      }]
+    }
+  }
+  depends_on = [kubernetes_manifest.gateway]
+}

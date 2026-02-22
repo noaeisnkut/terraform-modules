@@ -5,5 +5,5 @@ data "kubernetes_resource" "gateway_status" {
     name      = var.gateway_name
     namespace = var.namespace
   }
-  depends_on = [kubernetes_manifest.istio_http_route]
+  depends_on = [helm_release.alb_controller]
 }

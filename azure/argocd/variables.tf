@@ -14,8 +14,6 @@ variable "cluster_ca_certificate" {
   description = "The public CA certificate of the AKS cluster"
 }
 
-# Note: If you use the kube_config password/token instead of certs, 
-# you might replace these with a 'cluster_password' variable.
 variable "client_certificate" {
   type        = string
   description = "The client certificate for authenticating to the AKS cluster"
@@ -30,7 +28,7 @@ variable "client_key" {
 variable "oidc_issuer_url" {
   type        = string
   description = "The OIDC issuer URL from the AKS cluster for Workload Identity"
-  default     = "" # Optional, keep it if your ArgoCD needs to assume Azure Roles
+  default     = "" 
 }
 variable "argocd_config" {
   type = object({
