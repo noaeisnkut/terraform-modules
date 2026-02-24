@@ -44,7 +44,7 @@ inputs = {
           namespace = "flask-app"
           svc_name  = "istio-ingressgateway-external"
           svc_port  = 80
-          hostname  = "app.flask-app.com"
+          hostname  = "my-fav-second-hand-shop.com"
         }
       }
     }
