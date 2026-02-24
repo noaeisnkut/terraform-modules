@@ -1,20 +1,57 @@
-variable "name" {
+variable "vnet_name" {
   type        = string
-  description = "Name of the subnet"
+  description = "Name of the virtual network"
+}
+
+variable "location" {
+  type        = string
+  description = "Azure region"
 }
 
 variable "resource_group_name" {
   type        = string
-  description = "The name of the existing Resource Group"
+  description = "Resource group where VNet is deployed"
 }
 
-variable "vnet_name" {
+variable "address_space" {
   type        = string
-  description = "The name of the existing Virtual Network"
+  default     = "10.0.0.0/16"
+  description = "Address space for the VNet"
 }
 
-variable "address_prefix" {
+variable "aks_subnet_name" {
   type        = string
-  default     = "10.0.1.0/28"
-  description = "The CIDR block for the subnet"
+  default     = "aks-subnet"
+  description = "Subnet name for AKS cluster"
+}
+
+variable "aks_subnet_prefix" {
+  type        = string
+  default     = "10.0.1.0/24"
+  description = "Subnet prefix for AKS cluster"
+}
+
+variable "aks_subnet_service_endpoints" {
+  type        = list(string)
+  default     = ["Microsoft.Storage", "Microsoft.Sql"]
+  description = "Service endpoints to enable on the AKS subnet"
+}
+
+variable "app_subnet_name" {
+  type        = string
+  default     = "app-subnet"
+  description = "Subnet name for application resources"
+}
+
+variable "app_subnet_prefix" {
+  type        = string
+  default     = "10.0.2.0/24"
+  description = "Subnet prefix for application resources"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {
+    managed_by = "terraform"
+  }
 }

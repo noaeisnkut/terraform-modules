@@ -46,25 +46,10 @@ variable "gateway_name" {
   default = "external-gateway"
 }
 
-variable "apps" {
-  type = map(object({
-    namespace = string
-    svc_name  = string
-    svc_port  = number
-    hostname  = string
-  }))
-  description = "Apps to expose via ALB/Gateway API"
-}
 variable "albs" {
   type = map(object({
     alb_name    = string
     gateway_name = string
     subnet_id   = string
-    apps        = map(object({
-      namespace = string
-      svc_name  = string
-      svc_port  = number
-      hostname  = string
     }))
-  }))
 }

@@ -33,19 +33,27 @@ variable "istio_enable_internal_gateway" {
   default = false
 }
 
-variable "public_subnet_name" {
-  type    = string
-  default = "snet-public"
-}
-
 variable "private_subnet_name" {
   type    = string
   default = "snet-private"
 }
 
-variable "external_gateway_static_ip" {
-  type    = string
-  default = null
+variable "azure_gateway_name" {
+  type        = string
+  description = "The name of the Gateway resource created by the ALB controller."
+  # Example: "external-gateway"
+}
+
+variable "azure_alb_namespace" {
+  type        = string
+  description = "The namespace where the Azure ALB Gateway resides."
+  default     = "azure-alb-system"
+}
+
+variable "flask_app_hostname" {
+  type        = string
+  description = "The hostname for the Flask application to be routed through Istio."
+  # Example: "app.flask-app.com"
 }
 
 variable "gateway_max_replicas" {

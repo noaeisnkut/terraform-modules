@@ -45,3 +45,24 @@ resource "helm_release" "istio_gateway_external" {
 
   depends_on = [helm_release.istio_discovery]
 }
+resource "kubernetes_manifest" "istio_mesh_gateway" {
+  manifest = {
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "Gateway"
+    metadata = {
+      name      = "istio-gateway" # Your App Helm chart will use this name in parentRefs
+      namespace = var.istio_release_namespace
+    }
+    spec = {
+      gatewayClassName = "istio"
+      listeners = [{
+        name     = "http"
+        port     = 80
+        protocol = "HTTP"
+        allowedRoutes = {
+          namespaces = { from = "All" }
+        }
+      }]
+    }
+  }
+}
