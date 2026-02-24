@@ -5,30 +5,30 @@ resource "azurerm_kubernetes_cluster" "mycluster" {
   dns_prefix          = "${var.cluster_name}-dns"
 
   identity {
-    type = "SystemAssigned"
+    type = var.identity_type
   }
 
   # Enable Workload Identity
-  oidc_issuer_enabled       = true
-  workload_identity_enabled = true
+  oidc_issuer_enabled       = var.oidc_issuer_enabled
+  workload_identity_enabled = var.workload_identity_enabled
 
   network_profile {
-    network_plugin      = "azure"
-    network_plugin_mode = "overlay"
-    network_data_plane  = "cilium"
+    network_plugin      = var.network_plugin
+    network_plugin_mode = var.network_plugin_mode
+    network_data_plane  = var.network_data_plane
   }
 
   default_node_pool {
-    name                         = "systempool"
-    vm_size                      = "Standard_DS2_v2"
-    node_count                   = 1
-    auto_scaling_enabled          = false
-    only_critical_addons_enabled  = true
+    name                         = var.node_pool_name
+    vm_size                      = var.node_vm_size
+    node_count                   = var.node_count
+    auto_scaling_enabled          = var.auto_scaling_enabled
+    only_critical_addons_enabled  = var.only_critical_addons_enabled
   }
 
   node_provisioning_profile {
-    mode = "Auto"
+    mode = var.node_provisioning_mode
   }
 
-  tags = local.common_tags
+  tags = var.tags
 }

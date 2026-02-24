@@ -17,3 +17,33 @@ variable "cluster_name" {
   type        = string
   description = "The name of the AKS cluster"
 }
+
+variable "node_pool_name" {
+  type        = string
+  description = "The name of the AKS node pool"
+  default     = "systempool"
+}
+
+variable "node_vm_size" {
+  type        = string
+  description = "The VM size for the AKS nodes"
+  default     = "Standard_DS2_v2"
+}
+
+variable "node_count" {
+  type        = number
+  description = "The number of nodes in the AKS node pool"
+  default     = 1
+}
+
+variable "auto_scaling_enabled" {
+  type        = bool
+  description = "Enable or disable auto-scaling for the AKS node pool"
+  default     = false
+}
+
+variable "only_critical_addons_enabled" {
+  type        = bool
+  description = "Enable or disable only critical addons for the AKS node pool"
+  default     = true
+}
