@@ -14,6 +14,13 @@ dependency "vnet" {
   config_path = "../vnet"
 }
 
+dependency "istio" {
+  config_path = "../istio"
+  mock_outputs = {
+    istio_namespace         = "istio-system"
+    istio_ingress_service_name = "istio-ingressgateway"
+  }
+}
 
 inputs = {
   name                = "dev-alb-controller"
@@ -25,7 +32,7 @@ inputs = {
     alb1 = {
       alb_name     = "alb-infra"
       gateway_name = "external-gateway"
-      subnet_id    = dependency.vnet.outputs.alb_subnet_id
+      subnet_id    = dependency.vnet.outputs.subnets["alb_subnet"]
       apps = {
         argocd = {
           namespace = "argocd"
@@ -37,7 +44,7 @@ inputs = {
           namespace = dependency.istio.outputs.istio_namespace
           svc_name  = dependency.istio.outputs.istio_ingress_service_name
           svc_port  = 80
-          hostname  = "my-fav-second-hand-shop.com" 
+          hostname  = "my-fav-second-hand-shop.com"
         }
       }
     }

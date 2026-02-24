@@ -15,8 +15,8 @@ inputs = {
   resource_group_name = "rg-dns-dev"
 
   records_map = {
-    "argocd"                = dependency.alb.outputs.alb_public_ip
-    "my-fav-second-hand-shop" = dependency.alb.outputs.alb_public_ip
+    "argocd"                  = dependency.alb.outputs.albs["alb1"].alb_public_ip
+    "my-fav-second-hand-shop" = dependency.alb.outputs.albs["alb1"].alb_public_ip
   }
 
   ttl = 300

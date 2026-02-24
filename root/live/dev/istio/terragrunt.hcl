@@ -12,7 +12,6 @@ dependency "aks" {
 
 dependency "alb" {
   config_path = "../alb-controller"
-
   mock_outputs = {
     azure_gateway_name  = "external-gateway"
     azure_alb_namespace = "azure-alb-system"
@@ -25,10 +24,9 @@ inputs = {
   client_certificate     = dependency.aks.outputs.client_certificate
   client_key             = dependency.aks.outputs.client_key
 
-  azure_gateway_name  = "external-gateway" # Matches the ALB module input
-  azure_alb_namespace = "azure-alb-system" # The namespace where your ALB Gateway lives
-  
-  flask_app_hostname  = "my-fav-second-hand-shop.com"
+  azure_gateway_name      = "external-gateway"
+  azure_alb_namespace     = "azure-alb-system"
+  flask_app_hostname      = "my-fav-second-hand-shop.com"
 
   istio_release_version         = "1.24.0"
   istio_release_namespace       = "istio-system"
