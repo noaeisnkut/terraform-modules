@@ -23,7 +23,7 @@ inputs = {
 
   # Key Vault where DB password will be stored
   key_vault_id = dependency.external-secrets.outputs.key_vault_id
-  secret_name  = "flask-app-db-password"
+  secret_name  = "flask-app-secret"
 
   # Network
   vnet_id      = dependency.vnet.outputs.vnet_id
