@@ -8,19 +8,12 @@ terraform {
 
 dependency "aks" {
   config_path = "../aks"
-
-  mock_outputs = {
-    oidc_issuer_url = "https://mock-url.com"
-  }
 }
 
 dependency "vnet" {
   config_path = "../vnet"
-
-  mock_outputs = {
-    alb_subnet_id = "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Network/virtualNetworks/xxx/subnets/alb-subnet"
-  }
 }
+
 
 inputs = {
   name                = "dev-alb-controller"
@@ -40,28 +33,13 @@ inputs = {
           svc_port  = 80
           hostname  = "argocd.flask-app.com"
         }
-        flask = {
-          namespace = "flask-app"
-          svc_name  = "istio-ingressgateway-external"
+        istio_bridge = {
+          namespace = dependency.istio.outputs.istio_namespace
+          svc_name  = dependency.istio.outputs.istio_ingress_service_name
           svc_port  = 80
-          hostname  = "my-fav-second-hand-shop.com"
+          hostname  = "my-fav-second-hand-shop.com" 
         }
       }
     }
-
-    # Example for future ALBs:
-    # alb2 = {
-    #   alb_name     = "alb-infra2"
-    #   gateway_name = "external-gateway2"
-    #   subnet_id    = "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Network/virtualNetworks/xxx/subnets/alb-subnet2"
-    #   apps = {
-    #     myapp = {
-    #       namespace = "myapp-ns"
-    #       svc_name  = "myapp-svc"
-    #       svc_port  = 8080
-    #       hostname  = "app2.flask-app.com"
-    #     }
-    #   }
-    # }
   }
 }

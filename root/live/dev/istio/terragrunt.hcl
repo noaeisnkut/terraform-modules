@@ -8,23 +8,14 @@ terraform {
 
 dependency "aks" {
   config_path = "../aks"
-
-  mock_outputs = {
-    cluster_name           = "mock-cluster"
-    cluster_endpoint       = "https://mock-aks.azure.com"
-    cluster_ca_certificate = "bW9jay1jZXJ0"
-    client_certificate     = "bW9jay1jZXJ0"
-    client_key             = "bW9jay1rZXk="
-    resource_group_name    = "rg-mock"
-  }
 }
-dependency "vnet" {
-  config_path = "../vnet"
+
+dependency "alb" {
+  config_path = "../alb-controller"
 
   mock_outputs = {
-    vnet_name                = "mock-vnet"
-    vnet_resource_group_name = "rg-mock-vnet"
-    private_subnet_name      = "snet-private"
+    azure_gateway_name  = "external-gateway"
+    azure_alb_namespace = "azure-alb-system"
   }
 }
 
@@ -34,16 +25,14 @@ inputs = {
   client_certificate     = dependency.aks.outputs.client_certificate
   client_key             = dependency.aks.outputs.client_key
 
-  resource_group_name      = dependency.aks.outputs.resource_group_name
-  vnet_name                = dependency.vnet.outputs.vnet_name
-  vnet_resource_group_name = dependency.vnet.outputs.vnet_resource_group_name
-  private_subnet_name      = "snet-istio" 
-
+  azure_gateway_name  = "external-gateway" # Matches the ALB module input
+  azure_alb_namespace = "azure-alb-system" # The namespace where your ALB Gateway lives
+  
+  flask_app_hostname  = "my-fav-second-hand-shop.com"
 
   istio_release_version         = "1.24.0"
   istio_release_namespace       = "istio-system"
   istio_enable_external_gateway = true
-  istio_enable_internal_gateway = false
   
   gateway_max_replicas = 3
   gateway_cpu_target   = 80
