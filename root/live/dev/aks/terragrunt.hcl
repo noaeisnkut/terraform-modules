@@ -13,7 +13,7 @@ dependency "vnet" {
 inputs = {
   environment               = "dev"
   location                  = "East US"
-  resource_group_name       = "rg-app-flask-dev"
+  resource_group_name       = "rg-flask-app-dev"
   cluster_name              = "cluster-dev-flask-app"
   node_provisioning_mode    = "Auto"
   workload_sa_name          = "flask-app-sa"
@@ -22,5 +22,5 @@ inputs = {
 
   # VNET / Subnet
   vnet_id    = dependency.vnet.outputs.vnet_id
-  subnet_id  = dependency.vnet.outputs.subnets["aks_subnet"]
+  subnet_id  = dependency.vnet.outputs.aks_subnet_id
 }

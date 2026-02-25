@@ -7,7 +7,7 @@ terraform {
 }
 
 inputs = {
-  resource_group_name = "rg-flask-app"
+  resource_group_name = "rg-flask-app-shared"
   location            = "East US"     
   tags = {
     managed_by = "terragrunt"
@@ -17,7 +17,7 @@ inputs = {
   # Map of vaults
   key_vaults = {
     # Vault to actually create
-    "dev-flask-app-kv" = {
+    "flask-app-kv" = {
       location = "East US"
       secrets = {
         "flask-app-secret" = jsonencode({
@@ -27,7 +27,7 @@ inputs = {
     }
 
     # Example vault (commented out, won't be created)
-    # "prod-flask-app-kv" = {
+    # "flask-app-kv2" = {
     #   location = "East US"
     #   secrets = {
     #     "flask-app-secret" = jsonencode({

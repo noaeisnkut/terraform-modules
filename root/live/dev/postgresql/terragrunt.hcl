@@ -15,19 +15,19 @@ dependency "external-secrets" {
 }
 
 inputs = {
-  resource_group_name = "rg-flask-app"
+  resource_group_name = "rg-flask-app-shared"
   location            = "East US"
-  server_name         = "flask-db-prod"
+  server_name         = "flask-db"
   db_name             = "second_hand_shop"
   admin_username      = "psqladmin"
 
   # Key Vault where DB password will be stored
-  key_vault_id = dependency.external-secrets.outputs.key_vault_id
+  key_vault_id = dependency.external-secrets.outputs.key_vault_ids["flask-app-kv"]
   secret_name  = "flask-app-secret"
 
   # Network
   vnet_id      = dependency.vnet.outputs.vnet_id
-  db_subnet_id = dependency.vnet.outputs.subnets["db_subnet"]
+  db_subnet_id = dependency.vnet.outputs.db_subnet_id
 
   # Optional PostgreSQL settings (can override defaults)
   postgresql_version   = "14"
