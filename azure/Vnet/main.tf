@@ -7,23 +7,32 @@ resource "azurerm_virtual_network" "main" {
   tags = var.tags
 }
 
+# AKS subnet
 resource "azurerm_subnet" "aks_subnet" {
   name                 = var.aks_subnet_name
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [var.aks_subnet_prefix]
 
-  # Required for AKS transparent CNI
   private_endpoint_network_policies = "Disabled"
-
-  service_endpoints = var.aks_subnet_service_endpoints
 }
 
-resource "azurerm_subnet" "app_subnet" {
-  name                 = var.app_subnet_name
+# ALB / App Gateway subnet
+resource "azurerm_subnet" "alb_subnet" {
+  name                 = var.alb_subnet_name
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.app_subnet_prefix]
+  address_prefixes     = [var.alb_subnet_prefix]
+
+  private_endpoint_network_policies = "Enabled"
+}
+
+# DB subnet
+resource "azurerm_subnet" "db_subnet" {
+  name                 = var.db_subnet_name
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = [var.db_subnet_prefix]
 
   private_endpoint_network_policies = "Enabled"
 }

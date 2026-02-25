@@ -57,12 +57,16 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
   charset   = "UTF8"
 
   lifecycle {
+    ignore_changes        = [private_dns_zone_id] 
     create_before_destroy = true
   }
 }
-
 resource "azurerm_key_vault_secret" "db_password" {
   name         = var.secret_name
-  value        = random_password.admin_password.result
+  value        = random_password.db_password.result
   key_vault_id = var.key_vault_id
+
+  lifecycle {
+    ignore_changes = [tags] # removed 'value' so manual updates are not ignored
+  }
 }

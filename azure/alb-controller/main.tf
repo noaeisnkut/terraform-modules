@@ -8,12 +8,11 @@ resource "azurerm_user_assigned_identity" "alb_controller" {
 resource "azurerm_federated_identity_credential" "alb_controller" {
   name                = "${var.name}-federated"
   resource_group_name = var.resource_group_name
-  audience            = ["api://AzureADTokenExchange"]
+  audience            = "api://AzureADTokenExchange" # STRING fixed
   issuer              = var.oidc_issuer_url
   parent_id           = azurerm_user_assigned_identity.alb_controller.id
   subject             = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
 }
-
 resource "azurerm_role_assignment" "alb_identity_network" {
   for_each             = var.albs
   scope                = each.value.subnet_id 
@@ -35,7 +34,6 @@ resource "helm_release" "alb_controller" {
   namespace        = var.namespace
   create_namespace = true
   version          = var.controller_version
-
   set = [
     {
       name  = "albController.podIdentity.clientID"
@@ -70,17 +68,16 @@ resource "kubernetes_manifest" "alb_resource" {
 
 
 resource "kubernetes_manifest" "gateway" {
-  for_each = var.albs # Loop here too!
-  
+  for_each = var.albs
+
   manifest = {
     apiVersion = "gateway.networking.k8s.io/v1"
     kind       = "Gateway"
     metadata = {
-      name      = each.value.gateway_name # Use the name from the map
+      name      = each.value.gateway_name
       namespace = var.namespace
       annotations = {
-        # CRITICAL: This links the Gateway to a specific ALB resource
-        "alb.networking.azure.io/alb-id" = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.ServiceNetworking/trafficControllers/${each.value.alb_name}"
+        "alb.networking.azure.io/alb-id" = azurerm_application_load_balancer.alb[each.key].id
       }
     }
     spec = {
@@ -93,6 +90,9 @@ resource "kubernetes_manifest" "gateway" {
       }]
     }
   }
-  depends_on = [kubernetes_manifest.alb_resource]
-}
 
+  depends_on = [
+    helm_release.alb_controller,
+    kubernetes_manifest.alb_resource
+  ]
+}

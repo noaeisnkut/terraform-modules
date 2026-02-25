@@ -1,8 +1,11 @@
 output "identity_client_id" {
-  description = "The Client ID of the Managed Identity for the Flask App"
-  value       = azurerm_user_assigned_identity.flask_app.client_id
+  value = azurerm_user_assigned_identity.flask_app.client_id
 }
 
 output "identity_resource_id" {
   value = azurerm_user_assigned_identity.flask_app.id
+}
+
+output "service_account_name" {
+  value = kubernetes_service_account.flask_app_sa.metadata[0].name
 }

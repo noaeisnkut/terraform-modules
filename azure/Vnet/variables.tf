@@ -5,12 +5,12 @@ variable "vnet_name" {
 
 variable "location" {
   type        = string
-  description = "Azure region"
+  description = "Azure region where VNet will be deployed"
 }
 
 variable "resource_group_name" {
   type        = string
-  description = "Resource group where VNet is deployed"
+  description = "Resource group where the VNet is deployed"
 }
 
 variable "address_space" {
@@ -19,6 +19,13 @@ variable "address_space" {
   description = "Address space for the VNet"
 }
 
+variable "tags" {
+  type        = map(string)
+  default     = { managed_by = "terraform" }
+  description = "Tags to assign to the VNet"
+}
+
+# AKS subnet
 variable "aks_subnet_name" {
   type        = string
   default     = "aks-subnet"
@@ -28,30 +35,31 @@ variable "aks_subnet_name" {
 variable "aks_subnet_prefix" {
   type        = string
   default     = "10.0.1.0/24"
-  description = "Subnet prefix for AKS cluster"
+  description = "Address prefix for the AKS subnet"
 }
 
-variable "aks_subnet_service_endpoints" {
-  type        = list(string)
-  default     = ["Microsoft.Storage", "Microsoft.Sql"]
-  description = "Service endpoints to enable on the AKS subnet"
-}
-
-variable "app_subnet_name" {
+# ALB subnet
+variable "alb_subnet_name" {
   type        = string
-  default     = "app-subnet"
-  description = "Subnet name for application resources"
+  default     = "alb-subnet"
+  description = "Subnet name for ALB / application gateway"
 }
 
-variable "app_subnet_prefix" {
+variable "alb_subnet_prefix" {
   type        = string
   default     = "10.0.2.0/24"
-  description = "Subnet prefix for application resources"
+  description = "Address prefix for the ALB subnet"
 }
 
-variable "tags" {
-  type    = map(string)
-  default = {
-    managed_by = "terraform"
-  }
+# DB subnet
+variable "db_subnet_name" {
+  type        = string
+  default     = "db-subnet"
+  description = "Subnet name for private database"
+}
+
+variable "db_subnet_prefix" {
+  type        = string
+  default     = "10.0.3.0/24"
+  description = "Address prefix for the database subnet"
 }

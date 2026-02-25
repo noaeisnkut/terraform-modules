@@ -6,6 +6,10 @@ output "aks_subnet_id" {
   value = azurerm_subnet.aks_subnet.id
 }
 
-output "app_subnet_id" {
-  value = azurerm_subnet.app_subnet.id
+output "alb_subnet_id" {
+  value = azurerm_subnet.alb_subnet.id
+}
+
+output "db_subnet_id" {
+  value = azurerm_subnet.db_subnet.id
 }

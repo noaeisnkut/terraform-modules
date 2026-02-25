@@ -42,8 +42,12 @@ variable "auto_scaling_enabled" {
   default     = false
 }
 
-variable "only_critical_addons_enabled" {
-  type        = bool
-  description = "Enable or disable only critical addons for the AKS node pool"
-  default     = true
+variable "min_count" {
+  type    = number
+  default = 1
+}
+
+variable "max_count" {
+  type    = number
+  default = 3
 }
