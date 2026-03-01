@@ -1,15 +1,9 @@
 output "vnet_id" {
-  value = azurerm_virtual_network.main.id
+  value       = azurerm_virtual_network.this.id
+  description = "The ID of the Azure Virtual Network"
 }
 
-output "aks_subnet_id" {
-  value = azurerm_subnet.aks_subnet.id
-}
-
-output "alb_subnet_id" {
-  value = azurerm_subnet.alb_subnet.id
-}
-
-output "db_subnet_id" {
-  value = azurerm_subnet.db_subnet.id
+output "subnet_ids" {
+  value       = { for k, s in azurerm_subnet.this : k => s.id }
+  description = "Map of subnet IDs keyed by subnet name"
 }

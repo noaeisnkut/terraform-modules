@@ -1,53 +1,143 @@
-variable "environment" {
-  type        = string
-  description = "The deployment environment (e.g., prod, dev, staging)"
-}
-
 variable "location" {
   type        = string
-  description = "The Azure region where resources will be created"
+  description = "Azure region where the AKS cluster will be deployed."
 }
 
 variable "resource_group_name" {
   type        = string
-  description = "The name of the existing Resource Group"
+  description = "Existing resource group name."
 }
 
 variable "cluster_name" {
   type        = string
-  description = "The name of the AKS cluster"
+  description = "The AKS cluster name."
 }
 
-variable "node_pool_name" {
+variable "dns_prefix" {
   type        = string
-  description = "The name of the AKS node pool"
-  default     = "systempool"
+  default     = null
+  description = "DNS prefix. If null, generated from cluster name."
 }
 
-variable "node_vm_size" {
-  type        = string
-  description = "The VM size for the AKS nodes"
-  default     = "Standard_DS2_v2"
-}
-
-variable "node_count" {
-  type        = number
-  description = "The number of nodes in the AKS node pool"
-  default     = 1
-}
-
-variable "auto_scaling_enabled" {
+variable "enable_rbac" {
   type        = bool
-  description = "Enable or disable auto-scaling for the AKS node pool"
   default     = false
+  description = "Enable Role-Based Access Control"
 }
 
-variable "min_count" {
-  type    = number
-  default = 1
+variable "identity_type" {
+  type        = string
+  default     = "SystemAssigned"
+  description = "Managed identity type"
 }
 
-variable "max_count" {
-  type    = number
-  default = 3
+# --- Networking ---
+variable "aks_subnet_id" {
+  type        = string
+  description = "Subnet ID for the default node pool"
+}
+
+variable "network_plugin" {
+  type        = string
+  default     = "azure"
+  description = "Network plugin (azure, kubenet)"
+}
+
+variable "network_plugin_mode" {
+  type        = string
+  default     = "overlay"
+  description = "Network plugin mode"
+}
+
+variable "network_data_plane" {
+  type        = string
+  default     = "cilium"
+  description = "Network data plane"
+}
+
+variable "pod_cidr" {
+  type        = string
+  default     = null
+  description = "Optional pod CIDR"
+}
+
+variable "service_cidr" {
+  type        = string
+  default     = null
+  description = "Optional service CIDR"
+}
+
+variable "dns_service_ip" {
+  type        = string
+  default     = null
+  description = "Optional DNS service IP"
+}
+
+variable "default_node_pool_name" {
+  type        = string
+  default     = "systempool"
+  description = "Default node pool name"
+}
+
+variable "default_node_vm_size" {
+  type        = string
+  default     = "Standard_DS2_v2"
+  description = "VM size for default node pool"
+}
+
+variable "default_node_count" {
+  type        = number
+  default     = 2
+  description = "Initial node count if autoscaling disabled"
+}
+
+variable "default_auto_scaling_enabled" {
+  type        = bool
+  default     = true
+  description = "Enable autoscaling for default node pool"
+}
+
+variable "default_min_count" {
+  type        = number
+  default     = 1
+  description = "Min count for default node pool"
+}
+
+variable "default_max_count" {
+  type        = number
+  default     = 5
+  description = "Max count for default node pool"
+}
+
+variable "enable_node_public_ip" {
+  type        = bool
+  default     = false
+  description = "Should nodes have public IP?"
+}
+
+variable "extra_node_pools_fixed" {
+  type = map(object({
+    vm_size    = string
+    node_count = number
+    subnet_id  = string
+  }))
+  default     = {}
+  description = "Fixed node count node pools"
+}
+
+variable "extra_node_pools_autoscale" {
+  type = map(object({
+    vm_size   = string
+    min_count = number
+    max_count = number
+    subnet_id = string
+  }))
+  default     = {}
+  description = "Autoscale enabled node pools"
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags applied to resources"
 }

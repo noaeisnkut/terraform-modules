@@ -4,5 +4,5 @@ data "kubernetes_secret_v1" "argocd-secret" {
     namespace = "argocd"
   }
 
-  depends_on = [helm_release.argocd]  # FIX: ensure Helm install completes
+  depends_on = [helm_release.argocd] 
 }

@@ -1,38 +1,33 @@
-resource "azurerm_virtual_network" "main" {
+resource "azurerm_virtual_network" "this" {
   name                = var.vnet_name
   location            = var.location
   resource_group_name = var.resource_group_name
-  address_space       = [var.address_space]
+  address_space       = var.address_space
+  tags                = var.tags
 
-  tags = var.tags
+  dns_servers = length(var.dns_servers) > 0 ? var.dns_servers : null
 }
 
-# AKS subnet
-resource "azurerm_subnet" "aks_subnet" {
-  name                 = var.aks_subnet_name
+resource "azurerm_subnet" "this" {
+  for_each = var.subnets
+
+  name                 = each.key
   resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.aks_subnet_prefix]
+  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes     = each.value.address_prefixes
 
-  private_endpoint_network_policies = "Disabled"
-}
+  private_endpoint_network_policies = lookup(each.value, "private_endpoint_policies", null)
 
-# ALB / App Gateway subnet
-resource "azurerm_subnet" "alb_subnet" {
-  name                 = var.alb_subnet_name
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.alb_subnet_prefix]
+  service_endpoints = lookup(each.value, "service_endpoints", [])
 
-  private_endpoint_network_policies = "Enabled"
-}
-
-# DB subnet
-resource "azurerm_subnet" "db_subnet" {
-  name                 = var.db_subnet_name
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.db_subnet_prefix]
-
-  private_endpoint_network_policies = "Enabled"
+  dynamic "delegation" {
+    for_each = contains(keys(each.value), "delegation") ? [each.value.delegation] : []
+    content {
+      name = delegation.value.name
+      service_delegation {
+        name    = delegation.value.service_delegation.name
+        actions = delegation.value.service_delegation.actions
+      }
+    }
+  }
 }

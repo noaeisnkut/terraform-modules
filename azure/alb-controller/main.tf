@@ -1,4 +1,3 @@
-data "azurerm_subscription" "current" {}
 resource "azurerm_user_assigned_identity" "alb_controller" {
   name                = "${var.name}-identity"
   resource_group_name = var.resource_group_name
@@ -8,7 +7,7 @@ resource "azurerm_user_assigned_identity" "alb_controller" {
 resource "azurerm_federated_identity_credential" "alb_controller" {
   name                = "${var.name}-federated"
   resource_group_name = var.resource_group_name
-  audience            = "api://AzureADTokenExchange" # STRING fixed
+  audience            = ["api://AzureADTokenExchange"] 
   issuer              = var.oidc_issuer_url
   parent_id           = azurerm_user_assigned_identity.alb_controller.id
   subject             = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
@@ -47,7 +46,6 @@ resource "helm_release" "alb_controller" {
   depends_on = [azurerm_federated_identity_credential.alb_controller]
 }
 
-# 1. Create the ALB Resources (The "Hardware")
 resource "kubernetes_manifest" "alb_resource" {
   for_each = var.albs
   manifest = {
@@ -77,7 +75,7 @@ resource "kubernetes_manifest" "gateway" {
       name      = each.value.gateway_name
       namespace = var.namespace
       annotations = {
-        "alb.networking.azure.io/alb-id" = azurerm_application_load_balancer.alb[each.key].id
+        "alb.networking.azure.io/alb-id" = kubernetes_manifest.alb_resource[each.key].metadata[0].name
       }
     }
     spec = {

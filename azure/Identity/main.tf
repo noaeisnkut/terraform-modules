@@ -7,13 +7,13 @@ resource "azurerm_user_assigned_identity" "flask_app" {
 resource "azurerm_federated_identity_credential" "flask_federated" {
   name                = "fed-flask-app"
   resource_group_name = var.resource_group_name
-  audience            = "api://AzureADTokenExchange" # STRING fixed
+  audience            = ["api://AzureADTokenExchange"]
   issuer              = var.aks_oidc_issuer_url
   parent_id           = azurerm_user_assigned_identity.flask_app.id
   subject             = "system:serviceaccount:${var.namespace}:${var.sa_name}"
 }
 
-resource "kubernetes_service_account" "flask_app_sa" {
+resource "kubernetes_service_account_v1" "flask_app_sa" {
   metadata {
     name      = var.sa_name
     namespace = var.namespace

@@ -11,7 +11,7 @@ locals {
   }
 
   internal_annotations = {
-    "service.beta.kubernetes.io/azure-load-balancer-internal"        = "true"
+    "service.beta.kubernetes.io/azure-load-balancer-internal"        = "false"
     "service.beta.kubernetes.io/azure-load-balancer-internal-subnet" = var.private_subnet_name
   }
 }

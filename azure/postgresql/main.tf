@@ -4,7 +4,7 @@ resource "random_password" "db_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy = false
   }
 }
 
@@ -13,7 +13,7 @@ resource "azurerm_private_dns_zone" "this" {
   resource_group_name = var.resource_group_name
 
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy = false
   }
 }
 
@@ -24,7 +24,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   resource_group_name   = var.resource_group_name
 
   lifecycle {
-    create_before_destroy = true
+    create_before_destroy = false
   }
 }
 
@@ -44,7 +44,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
 
   lifecycle {
     ignore_changes        = [zone]
-    create_before_destroy = true
+    create_before_destroy = false
   }
 
   depends_on = [azurerm_private_dns_zone_virtual_network_link.this]
@@ -57,8 +57,7 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
   charset   = "UTF8"
 
   lifecycle {
-    ignore_changes        = [private_dns_zone_id] 
-    create_before_destroy = true
+    create_before_destroy = false
   }
 }
 resource "azurerm_key_vault_secret" "db_password" {
@@ -67,6 +66,6 @@ resource "azurerm_key_vault_secret" "db_password" {
   key_vault_id = var.key_vault_id
 
   lifecycle {
-    ignore_changes = [tags] # removed 'value' so manual updates are not ignored
+    ignore_changes = [tags]
   }
 }

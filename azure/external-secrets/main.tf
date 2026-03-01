@@ -1,6 +1,4 @@
 data "azurerm_client_config" "current" {}
-
-# 1. Create Multiple Vaults
 resource "azurerm_key_vault" "this" {
   for_each            = var.key_vaults
   name                = each.key
@@ -13,7 +11,6 @@ resource "azurerm_key_vault" "this" {
   tags = var.tags
 }
 
-# 2. Access Policy (Required to actually set the secrets)
 resource "azurerm_key_vault_access_policy" "deployer" {
   for_each     = azurerm_key_vault.this
   key_vault_id = each.value.id
@@ -23,7 +20,6 @@ resource "azurerm_key_vault_access_policy" "deployer" {
   secret_permissions = ["Get", "List", "Set", "Delete", "Purge"]
 }
 
-# 3. Flatten Secrets
 locals {
   vault_secrets = flatten([
     for vault_key, vault_val in var.key_vaults : [
@@ -36,7 +32,6 @@ locals {
   ])
 }
 
-# 4. Create Secrets
 resource "azurerm_key_vault_secret" "this" {
   for_each     = { for s in local.vault_secrets : "${s.vault_key}-${s.secret_name}" => s }
 
@@ -47,6 +42,6 @@ resource "azurerm_key_vault_secret" "this" {
   depends_on = [azurerm_key_vault_access_policy.deployer]
 
   lifecycle {
-    ignore_changes = [tags, value, expiration_date] # FIX: added value to ignore changes if manually updated
+    ignore_changes = [tags, value, expiration_date] 
   }
 }

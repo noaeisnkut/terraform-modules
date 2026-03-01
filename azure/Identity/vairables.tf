@@ -39,7 +39,6 @@ variable "storage_account_id" {
   description = "Resource ID of the Azure Storage Account to assign blob permissions"
 }
 
-# Kubernetes provider info
 variable "kube_host" {
   type        = string
   description = "Kubernetes API server host URL"

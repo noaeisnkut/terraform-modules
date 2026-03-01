@@ -7,5 +7,5 @@ output "identity_resource_id" {
 }
 
 output "service_account_name" {
-  value = kubernetes_service_account.flask_app_sa.metadata[0].name
+  value = kubernetes_service_account_v1.flask_app_sa
 }

@@ -41,7 +41,6 @@ variable "private_subnet_name" {
 variable "azure_gateway_name" {
   type        = string
   description = "The name of the Gateway resource created by the ALB controller."
-  # Example: "external-gateway"
 }
 
 variable "azure_alb_namespace" {
@@ -53,7 +52,6 @@ variable "azure_alb_namespace" {
 variable "flask_app_hostname" {
   type        = string
   description = "The hostname for the Flask application to be routed through Istio."
-  # Example: "app.flask-app.com"
 }
 
 variable "gateway_max_replicas" {
