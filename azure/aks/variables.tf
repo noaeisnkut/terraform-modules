@@ -62,13 +62,13 @@ variable "pod_cidr" {
 
 variable "service_cidr" {
   type        = string
-  default     = "10.0.1.0/27"
+  default     = "10.0.10.0/24"
   description = "Optional service CIDR"
 }
 
 variable "dns_service_ip" {
   type        = string
-  default     = "10.0.1.10"
+  default     =  "10.0.10.10"
   description = "Optional DNS service IP"
 }
 
