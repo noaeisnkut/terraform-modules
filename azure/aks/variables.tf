@@ -80,7 +80,7 @@ variable "default_node_pool_name" {
 
 variable "default_node_vm_size" {
   type        = string
-  default     = "Standard_DS2_v2"
+  default     = "Standard_DC2s_v3"
   description = "VM size for default node pool"
 }
 
