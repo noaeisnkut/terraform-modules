@@ -5,4 +5,5 @@ output "argocd" {
     svc_name = "argocd-server"  
     svc_port = 80
   }
+  sensitive = true
 }
