@@ -62,7 +62,7 @@ variable "pod_cidr" {
 
 variable "service_cidr" {
   type        = string
-  default     = null
+  default     = "10.240.0.0/16"
   description = "Optional service CIDR"
 }
 
