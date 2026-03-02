@@ -1,4 +1,5 @@
 resource "helm_release" "argocd" {
+  provider = helm
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
