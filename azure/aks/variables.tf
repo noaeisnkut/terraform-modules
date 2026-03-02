@@ -31,7 +31,6 @@ variable "identity_type" {
   description = "Managed identity type"
 }
 
-# --- Networking ---
 variable "aks_subnet_id" {
   type        = string
   description = "Subnet ID for the default node pool"
