@@ -86,7 +86,7 @@ variable "default_node_vm_size" {
 
 variable "default_node_count" {
   type        = number
-  default     = 2
+  default     = 1
   description = "Initial node count if autoscaling disabled"
 }
 
@@ -104,7 +104,7 @@ variable "default_min_count" {
 
 variable "default_max_count" {
   type        = number
-  default     = 5
+  default     = 2
   description = "Max count for default node pool"
 }
 
