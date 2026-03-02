@@ -29,6 +29,7 @@ provider "azurerm" {
   features {}
 }
 provider "kubernetes" {
+  alias                  = "aks"
   host                   = var.cluster_endpoint
   client_certificate     = base64decode(var.client_certificate)
   client_key             = base64decode(var.client_key)
