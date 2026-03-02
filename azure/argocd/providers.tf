@@ -28,3 +28,9 @@ terraform {
 provider "azurerm" {
   features {}
 }
+provider "kubernetes" {
+  host                   = dependency.aks.outputs.kube_host
+  client_certificate     = base64decode(dependency.aks.outputs.kube_client_certificate)
+  client_key             = base64decode(dependency.aks.outputs.kube_client_key)
+  cluster_ca_certificate = base64decode(dependency.aks.outputs.kube_cluster_ca_certificate)
+}
