@@ -68,7 +68,7 @@ variable "service_cidr" {
 
 variable "dns_service_ip" {
   type        = string
-  default     = null
+  default     = "10.0.1.10"
   description = "Optional DNS service IP"
 }
 
