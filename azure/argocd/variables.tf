@@ -24,12 +24,6 @@ variable "client_key" {
   sensitive   = true
   description = "The client key for authenticating to the AKS cluster"
 }
-
-variable "oidc_issuer_url" {
-  type        = string
-  description = "The OIDC issuer URL from the AKS cluster for Workload Identity"
-  default     = "" 
-}
 variable "argocd_config" {
   type = object({
     hostname = string
