@@ -27,4 +27,5 @@ resource "azurerm_subnet" "this" {
       }
     }
   }
+  depends_on = [ azurerm_virtual_network.this ]
 }
