@@ -19,11 +19,6 @@ resource "helm_release" "istio_discovery" {
     value = "/dev/stdout"
   }
 
-  set {
-    name  = "profile"
-    value = "minimal"
-  }
-
   depends_on = [helm_release.istio_base]
 }
 
