@@ -44,3 +44,22 @@ variable "gateway_cpu_target" {
   type    = number
   default = 80
 }
+variable "cluster_endpoint" {
+  type        = string
+  description = "The API endpoint of the AKS cluster"
+}
+
+variable "cluster_ca_certificate" {
+  type        = string
+  description = "Base64-encoded CA certificate for the AKS cluster"
+}
+
+variable "client_certificate" {
+  type        = string
+  description = "Base64-encoded client certificate for the AKS cluster"
+}
+
+variable "client_key" {
+  type        = string
+  description = "Base64-encoded client key for the AKS cluster"
+}
