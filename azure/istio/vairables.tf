@@ -3,12 +3,6 @@ variable "resource_group_name" {
   description = "The Resource Group of the AKS cluster."
 }
 
-
-variable "vnet_id" {
-  type        = string
-  description = "The ID of the Virtual Network."
-}
-
 variable "istio_release_version" {
   type    = string
   default = "1.24.0"
@@ -29,25 +23,16 @@ variable "istio_enable_internal_gateway" {
   default = false
 }
 
-variable "private_subnet_name" {
+variable "private_subnet_id" {
+  type        = string
+  description = "Subnet ID for the internal Istio gateway (used only if creating a LoadBalancer/ALB)"
+  default     = null
+}
+
+variable "external_gateway_service_type" {
   type    = string
-  default = "snet-private"
-}
-
-variable "azure_gateway_name" {
-  type        = string
-  description = "The name of the Gateway resource created by the ALB controller."
-}
-
-variable "azure_alb_namespace" {
-  type        = string
-  description = "The namespace where the Azure ALB Gateway resides."
-  default     = "azure-alb-system"
-}
-
-variable "flask_app_hostname" {
-  type        = string
-  description = "The hostname for the Flask application to be routed through Istio."
+  default = "ClusterIP"
+  description = "Service type for the Istio external gateway. Use ClusterIP if an external ALB is handling traffic."
 }
 
 variable "gateway_max_replicas" {

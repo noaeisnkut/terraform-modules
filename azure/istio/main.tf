@@ -23,7 +23,6 @@ resource "helm_release" "istio_discovery" {
       value = "minimal"
     }
   ]
-
   depends_on = [helm_release.istio_base]
 }
 
@@ -38,7 +37,7 @@ resource "helm_release" "istio_gateway_external" {
   values = [
     yamlencode({
       service = {
-        type = "ClusterIP" 
+        type = var.external_gateway_service_type
       }
     })
   ]
@@ -50,7 +49,7 @@ resource "kubernetes_manifest" "istio_mesh_gateway" {
     apiVersion = "gateway.networking.k8s.io/v1"
     kind       = "Gateway"
     metadata = {
-      name      = "istio-gateway" # Your App Helm chart will use this name in parentRefs
+      name      = "istio-gateway"
       namespace = var.istio_release_namespace
     }
     spec = {
@@ -65,4 +64,6 @@ resource "kubernetes_manifest" "istio_mesh_gateway" {
       }]
     }
   }
+
+  depends_on = [helm_release.istio_discovery]
 }
