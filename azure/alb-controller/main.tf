@@ -94,3 +94,38 @@ resource "kubernetes_manifest" "gateway" {
     kubernetes_manifest.alb_resource
   ]
 }
+resource "kubernetes_manifest" "alb_routes" {
+  for_each = {
+    for alb_key, alb_val in var.albs : alb_key => alb_val.apps
+  }
+
+  manifest = {
+    apiVersion = "alb.networking.azure.io/v1"
+    kind       = "ApplicationLoadBalancerRoute"
+    metadata = {
+      name      = "${each.key}-istio-route"
+      namespace = var.namespace
+    }
+    spec = {
+      gatewayRef = {
+        name      = kubernetes_manifest.gateway[each.key].metadata[0].name
+        namespace = var.namespace
+      }
+      backendRefs = [
+        {
+          name      = each.value.istio_bridge.svc_name
+          namespace = each.value.istio_bridge.namespace
+          port      = each.value.istio_bridge.svc_port
+          weight    = 100
+        }
+      ]
+      rules = [
+        {
+          host = each.value.istio_bridge.hostname
+          path = "/*"
+        }
+      ]
+    }
+  }
+  depends_on = [kubernetes_manifest.gateway]
+}
