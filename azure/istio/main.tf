@@ -13,16 +13,17 @@ resource "helm_release" "istio_discovery" {
   chart      = "istiod"
   version    = var.istio_release_version
   namespace  = var.istio_release_namespace
-  set = [
-    {
-      name  = "meshConfig.accessLogFile"
-      value = "/dev/stdout"
-    },
-    {
-      name  = "profile"
-      value = "minimal"
-    }
-  ]
+
+  set {
+    name  = "meshConfig.accessLogFile"
+    value = "/dev/stdout"
+  }
+
+  set {
+    name  = "profile"
+    value = "minimal"
+  }
+
   depends_on = [helm_release.istio_base]
 }
 
