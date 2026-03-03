@@ -3,14 +3,10 @@ variable "resource_group_name" {
   description = "The Resource Group of the AKS cluster."
 }
 
-variable "vnet_resource_group_name" {
-  type        = string
-  description = "The Resource Group where the VNet is located."
-}
 
-variable "vnet_name" {
+variable "vnet_id" {
   type        = string
-  description = "The name of the Virtual Network."
+  description = "The ID of the Virtual Network."
 }
 
 variable "istio_release_version" {
