@@ -1,3 +1,4 @@
+# 1. Identity for ALB
 resource "azurerm_user_assigned_identity" "alb_controller" {
   name                = "${var.name}-identity"
   resource_group_name = var.resource_group_name
@@ -7,14 +8,15 @@ resource "azurerm_user_assigned_identity" "alb_controller" {
 resource "azurerm_federated_identity_credential" "alb_controller" {
   name                = "${var.name}-federated"
   resource_group_name = var.resource_group_name
-  audience            = ["api://AzureADTokenExchange"] 
+  audience            = ["api://AzureADTokenExchange"]
   issuer              = var.oidc_issuer_url
   parent_id           = azurerm_user_assigned_identity.alb_controller.id
   subject             = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
 }
+
 resource "azurerm_role_assignment" "alb_identity_network" {
   for_each             = var.albs
-  scope                = each.value.subnet_id 
+  scope                = each.value.subnet_id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.alb_controller.principal_id
 }
@@ -26,6 +28,8 @@ resource "azurerm_public_ip" "alb" {
   allocation_method   = "Static"
   sku                 = "Standard"
 }
+
+# 2. Install ALB Helm chart
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
   repository       = "oci://mcr.microsoft.com/application-lb/charts"
@@ -33,6 +37,7 @@ resource "helm_release" "alb_controller" {
   namespace        = var.namespace
   create_namespace = true
   version          = var.controller_version
+
   set = [
     {
       name  = "albController.podIdentity.clientID"
@@ -46,8 +51,25 @@ resource "helm_release" "alb_controller" {
   depends_on = [azurerm_federated_identity_credential.alb_controller]
 }
 
+# 3. Wait for CRDs to be available
+resource "null_resource" "wait_for_alb_crds" {
+  depends_on = [helm_release.alb_controller]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      while ! kubectl get crd applicationloadbalancers.alb.networking.azure.io >/dev/null 2>&1; do
+        echo "Waiting for ALB CRDs to be registered..."
+        sleep 5
+      done
+    EOT
+  }
+}
+
+# 4. ALB resources (after CRDs exist)
 resource "kubernetes_manifest" "alb_resource" {
   for_each = var.albs
+  depends_on = [null_resource.wait_for_alb_crds]
+
   manifest = {
     apiVersion = "alb.networking.azure.io/v1"
     kind       = "ApplicationLoadBalancer"
@@ -55,18 +77,21 @@ resource "kubernetes_manifest" "alb_resource" {
       name      = each.value.alb_name
       namespace = var.namespace
       annotations = {
-          "alb.networking.azure.io/public-ip-id" = azurerm_public_ip.alb.id
-        }
+        "alb.networking.azure.io/public-ip-id" = azurerm_public_ip.alb.id
       }
+    }
     spec = {
       associations = [{ subnetId = each.value.subnet_id }]
     }
   }
 }
 
-
+# 5. Gateway resources
 resource "kubernetes_manifest" "gateway" {
   for_each = var.albs
+  depends_on = [
+    kubernetes_manifest.alb_resource
+  ]
 
   manifest = {
     apiVersion = "gateway.networking.k8s.io/v1"
@@ -88,22 +113,19 @@ resource "kubernetes_manifest" "gateway" {
       }]
     }
   }
-
-  depends_on = [
-    helm_release.alb_controller,
-    kubernetes_manifest.alb_resource
-  ]
 }
+
+# 6. Routes for each app
 resource "kubernetes_manifest" "alb_routes" {
-  for_each = {
-    for alb_key, alb_val in var.albs : alb_key => alb_val.apps
-  }
+  for_each = { for alb_key, alb_val in var.albs : alb_key => alb_val.apps }
+
+  depends_on = [kubernetes_manifest.gateway]
 
   manifest = {
     apiVersion = "alb.networking.azure.io/v1"
     kind       = "ApplicationLoadBalancerRoute"
     metadata = {
-      name      = "${each.key}-istio-route"
+      name      = "${each.key}-route"
       namespace = var.namespace
     }
     spec = {
@@ -127,5 +149,4 @@ resource "kubernetes_manifest" "alb_routes" {
       ]
     }
   }
-  depends_on = [kubernetes_manifest.gateway]
 }
