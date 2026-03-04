@@ -51,9 +51,10 @@ variable "albs" {
     alb_name     = string
     gateway_name = string
     subnet_id    = string
-    istio_bridge = optional(object({
-      svc_name  = string
+    # This is the missing piece!
+    apps = map(object({
       namespace = string
+      svc_name  = string
       svc_port  = number
       hostname  = string
     }))
