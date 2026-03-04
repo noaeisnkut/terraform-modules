@@ -125,41 +125,40 @@ resource "kubectl_manifest" "alb_routes" {
   }
 
   yaml_body = yamlencode({
-    apiVersion = "gateway.networking.k8s.io/v1beta1"
-    kind       = "HTTPRoute"
-    metadata = {
-      name      = lower(replace("${each.key}-route", "_", "-"))  # fully sanitized
-      namespace = var.namespace
-    }
-    spec = {
-      parentRefs = [
-        {
-          name      = lower(replace(each.value.gateway, "_", "-"))
-          namespace = var.namespace
-        }
-      ]
-      rules = [
-        {
-          matches = [
-            {
-              path = {
-                type  = "PathPrefix"
-                value = "/"
-              }
+  apiVersion = "gateway.networking.k8s.io/v1beta1"
+  kind       = "HTTPRoute"
+  metadata = {
+    name      = lower(replace("${each.key}-route", "_", "-"))
+    namespace = var.namespace
+  }
+  spec = {
+    parentRefs = [
+      {
+        name      = lower(replace(each.value.gateway, "_", "-"))
+        namespace = var.namespace
+      }
+    ]
+    hostnames = [each.value.app_val.hostname]  # <-- add this line
+    rules = [
+      {
+        matches = [
+          {
+            path = {
+              type  = "PathPrefix"
+              value = "/"
             }
-          ]
-          backendRefs = [
-            {
-              name      = each.value.app_val.svc_name
-              namespace = each.value.app_val.namespace
-              port      = each.value.app_val.svc_port
-              weight    = 100
-            }
-          ]
-        }
-      ]
-    }
-  })
-
-  depends_on = [kubectl_manifest.gateway]
+          }
+        ]
+        backendRefs = [
+          {
+            name      = each.value.app_val.svc_name
+            namespace = each.value.app_val.namespace
+            port      = each.value.app_val.svc_port
+            weight    = 100
+          }
+        ]
+      }
+    ]
+  }
+})
 }
