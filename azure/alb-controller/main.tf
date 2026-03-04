@@ -121,20 +121,20 @@ resource "kubectl_manifest" "alb_routes" {
           gateway = alb_val.gateway_name
         }
       ]
-    ]) : "${pair.alb_key}${pair.app_key}" => pair
+    ]) : "${lower(replace(pair.alb_key, "_", "-"))}-${lower(replace(pair.app_key, "_", "-"))}" => pair
   }
 
   yaml_body = yamlencode({
     apiVersion = "gateway.networking.k8s.io/v1beta1"
     kind       = "HTTPRoute"
     metadata = {
-      name      = "${each.key}-route"
+      name      = lower(replace("${each.key}-route", "_", "-"))  # fully sanitized
       namespace = var.namespace
     }
     spec = {
       parentRefs = [
         {
-          name      = each.value.gateway
+          name      = lower(replace(each.value.gateway, "_", "-"))
           namespace = var.namespace
         }
       ]
