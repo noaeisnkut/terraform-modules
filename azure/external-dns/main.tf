@@ -7,3 +7,7 @@ resource "azurerm_dns_a_record" "this" {
   ttl                 = var.ttl
   records             = [each.value]
 }
+resource "azurerm_dns_zone" "flask_app" {
+  name                = var.zone_name
+  resource_group_name = var.resource_group_name
+}
