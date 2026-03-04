@@ -51,12 +51,13 @@ variable "albs" {
     alb_name     = string
     gateway_name = string
     subnet_id    = string
-    istio_bridge = object({
+    # Adding 'optional' prevents the error you just saw
+    istio_bridge = optional(object({
       svc_name  = string
       namespace = string
       svc_port  = number
       hostname  = string
-    })
+    }))
   }))
 }
 variable "cluster_endpoint" {
