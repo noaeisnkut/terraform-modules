@@ -51,24 +51,25 @@ resource "helm_release" "alb_controller" {
   depends_on = [azurerm_federated_identity_credential.alb_controller]
 }
 
-# 3. Wait for CRDs to be available
-resource "null_resource" "wait_for_alb_crds" {
+# 3. Install ALB CRDs explicitly via kubectl (null_resource)
+resource "null_resource" "install_alb_crds" {
   depends_on = [helm_release.alb_controller]
 
   provisioner "local-exec" {
     command = <<EOT
-      while ! kubectl get crd applicationloadbalancers.alb.networking.azure.io >/dev/null 2>&1; do
-        echo "Waiting for ALB CRDs to be registered..."
-        sleep 5
-      done
+      echo "Applying ALB CRDs..."
+      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crds/applicationloadbalancer-crd.yaml
+      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crds/applicationloadbalancerroute-crd.yaml
+      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crds/gateway-crd.yaml
+      echo "CRDs applied!"
     EOT
   }
 }
 
 # 4. ALB resources (after CRDs exist)
 resource "kubernetes_manifest" "alb_resource" {
-  for_each = var.albs
-  depends_on = [null_resource.wait_for_alb_crds]
+  for_each   = var.albs
+  depends_on = [null_resource.install_alb_crds]
 
   manifest = {
     apiVersion = "alb.networking.azure.io/v1"
@@ -88,10 +89,8 @@ resource "kubernetes_manifest" "alb_resource" {
 
 # 5. Gateway resources
 resource "kubernetes_manifest" "gateway" {
-  for_each = var.albs
-  depends_on = [
-    kubernetes_manifest.alb_resource
-  ]
+  for_each   = var.albs
+  depends_on = [kubernetes_manifest.alb_resource]
 
   manifest = {
     apiVersion = "gateway.networking.k8s.io/v1"
@@ -117,8 +116,7 @@ resource "kubernetes_manifest" "gateway" {
 
 # 6. Routes for each app
 resource "kubernetes_manifest" "alb_routes" {
-  for_each = { for alb_key, alb_val in var.albs : alb_key => alb_val.apps }
-
+  for_each   = { for alb_key, alb_val in var.albs : alb_key => alb_val.apps }
   depends_on = [kubernetes_manifest.gateway]
 
   manifest = {
