@@ -3,7 +3,10 @@ variable "name" {
   description = "Base name for ALB controller resources"
   default     = "azure-alb-controller"
 }
-
+variable "subscription_id" {
+  type        = string
+  description = "Azure subscription ID"
+}
 variable "location" {
   type        = string
   description = "Azure region"
