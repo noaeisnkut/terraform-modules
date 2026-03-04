@@ -8,19 +8,11 @@ resource "azurerm_user_assigned_identity" "alb_controller" {
 }
 
 resource "azurerm_federated_identity_credential" "alb_controller" {
-  name                = "${var.name}-federated"
-  resource_group_name = var.resource_group_name
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = var.oidc_issuer_url
-  parent_id           = azurerm_user_assigned_identity.alb_controller.id
-  subject             = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
-}
-
-resource "azurerm_role_assignment" "alb_identity_network" {
-  for_each             = var.albs
-  scope                = each.value.subnet_id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.alb_controller.principal_id
+  name      = "${var.name}-federated"
+  audience  = ["api://AzureADTokenExchange"]
+  issuer    = var.oidc_issuer_url
+  parent_id = azurerm_user_assigned_identity.alb_controller.id
+  subject   = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
 }
 
 # -------------------------------
@@ -36,7 +28,67 @@ resource "azurerm_public_ip" "alb" {
 }
 
 # -------------------------------
-# 3. Helm ALB Controller
+# 3. Azure Application Gateway (ALB)
+# -------------------------------
+resource "azurerm_application_gateway" "alb" {
+  for_each = var.albs
+  name                = each.value.alb_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku {
+    name     = "Standard_v2"
+    tier     = "Standard_v2"
+    capacity = 2
+  }
+
+  gateway_ip_configuration {
+    name      = "gateway-ip"
+    subnet_id = each.value.subnet_id
+  }
+
+  frontend_ip_configuration {
+    name                 = "public-ip"
+    public_ip_address_id = azurerm_public_ip.alb[each.key].id
+  }
+
+  frontend_port {
+    name = "http"
+    port = 80
+  }
+
+  backend_address_pool {
+    name = "default"
+  }
+
+  backend_http_settings {
+    name                  = "default"
+    port                  = 80
+    protocol              = "Http"
+    cookie_based_affinity = "Disabled"
+  }
+
+  http_listener {
+    name                           = "http-listener"
+    frontend_ip_configuration_name = "public-ip"
+    frontend_port_name             = "http"
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                      = "rule1"
+    rule_type                 = "Basic"
+    http_listener_name         = "http-listener"
+    backend_address_pool_name  = "default"
+    backend_http_settings_name = "default"
+  }
+
+  tags = {
+    Environment = "dev"
+  }
+}
+
+# -------------------------------
+# 4. Helm ALB Controller
 # -------------------------------
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
@@ -56,11 +108,11 @@ resource "helm_release" "alb_controller" {
     value = "true"
   }
 
-  depends_on = [azurerm_federated_identity_credential.alb_controller]
+  depends_on = [azurerm_federated_identity_credential.alb_controller, azurerm_application_gateway.alb]
 }
 
 # -------------------------------
-# 4. ApplicationLoadBalancer resource
+# 5. Kubernetes ALB + Gateway + HTTPRoutes
 # -------------------------------
 resource "kubectl_manifest" "alb_resource" {
   for_each   = var.albs
@@ -79,9 +131,6 @@ resource "kubectl_manifest" "alb_resource" {
   })
 }
 
-# -------------------------------
-# 5. Gateway resource (Gateway API)
-# -------------------------------
 resource "kubectl_manifest" "gateway" {
   for_each   = var.albs
   depends_on = [kubectl_manifest.alb_resource]
@@ -93,7 +142,7 @@ resource "kubectl_manifest" "gateway" {
       name      = each.value.gateway_name
       namespace = var.namespace
       annotations = {
-        "alb.networking.azure.io/alb-id" = "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/applicationGateways/${each.value.alb_name}"
+        "alb.networking.azure.io/alb-id" = azurerm_application_gateway.alb[each.key].id
       }
     }
     spec = {
@@ -108,9 +157,6 @@ resource "kubectl_manifest" "gateway" {
   })
 }
 
-# -------------------------------
-# 6. HTTPRoute resources for each app (Gateway API)
-# -------------------------------
 resource "kubectl_manifest" "alb_routes" {
   for_each = {
     for pair in flatten([
@@ -126,40 +172,40 @@ resource "kubectl_manifest" "alb_routes" {
   }
 
   yaml_body = yamlencode({
-  apiVersion = "gateway.networking.k8s.io/v1beta1"
-  kind       = "HTTPRoute"
-  metadata = {
-    name      = lower(replace("${each.key}-route", "_", "-"))
-    namespace = var.namespace
-  }
-  spec = {
-    parentRefs = [
-      {
-        name      = lower(replace(each.value.gateway, "_", "-"))
-        namespace = var.namespace
-      }
-    ]
-    hostnames = [each.value.app_val.hostname]  # <-- add this line
-    rules = [
-      {
-        matches = [
-          {
-            path = {
-              type  = "PathPrefix"
-              value = "/"
+    apiVersion = "gateway.networking.k8s.io/v1beta1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = lower(replace("${each.key}-route", "_", "-"))
+      namespace = var.namespace
+    }
+    spec = {
+      parentRefs = [
+        {
+          name      = lower(replace(each.value.gateway, "_", "-"))
+          namespace = var.namespace
+        }
+      ]
+      hostnames = [each.value.app_val.hostname]
+      rules = [
+        {
+          matches = [
+            {
+              path = {
+                type  = "PathPrefix"
+                value = "/"
+              }
             }
-          }
-        ]
-        backendRefs = [
-          {
-            name      = each.value.app_val.svc_name
-            namespace = each.value.app_val.namespace
-            port      = each.value.app_val.svc_port
-            weight    = 100
-          }
-        ]
-      }
-    ]
-  }
-})
+          ]
+          backendRefs = [
+            {
+              name      = each.value.app_val.svc_name
+              namespace = each.value.app_val.namespace
+              port      = each.value.app_val.svc_port
+              weight    = 100
+            }
+          ]
+        }
+      ]
+    }
+  })
 }

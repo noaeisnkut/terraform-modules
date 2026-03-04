@@ -1,85 +1,54 @@
 variable "name" {
+  description = "Base name for ALB resources"
   type        = string
-  description = "Base name for ALB controller resources"
-  default     = "azure-alb-controller"
-}
-variable "subscription_id" {
-  type        = string
-  description = "Azure subscription ID"
-}
-variable "location" {
-  type        = string
-  description = "Azure region"
 }
 
 variable "resource_group_name" {
+  description = "Resource group for ALB"
   type        = string
 }
 
-variable "oidc_issuer_url" {
+variable "location" {
+  description = "Azure location for ALB"
   type        = string
 }
 
-variable "alb_subnet_id" {
+variable "subscription_id" {
+  description = "Azure subscription ID"
   type        = string
 }
 
 variable "namespace" {
+  description = "Kubernetes namespace for ALB controller and CRDs"
   type        = string
-  default     = "azure-alb-system"
 }
 
 variable "service_account_name" {
-  type    = string
-  default = "alb-controller-sa"
+  description = "Kubernetes service account name for the ALB controller"
+  type        = string
 }
 
 variable "controller_version" {
-  type    = string
-  default = "1.9.11"
+  description = "ALB controller Helm chart version"
+  type        = string
 }
 
-variable "alb_resource_name" {
-  type    = string
-  default = "alb-infra"
-}
-
-variable "gateway_name" {
-  type    = string
-  default = "external-gateway"
+variable "oidc_issuer_url" {
+  description = "OIDC issuer URL for federated identity"
+  type        = string
 }
 
 variable "albs" {
+  description = "Map of ALBs to create"
   type = map(object({
     alb_name     = string
     gateway_name = string
     subnet_id    = string
-    # This is the missing piece!
     apps = map(object({
-      namespace = string
-      svc_name  = string
-      svc_port  = number
       hostname  = string
+      svc_name  = string
+      namespace = string
+      svc_port  = number
     }))
   }))
-}
-variable "cluster_endpoint" {
-  type        = string
-  description = "The host (URL) of the AKS API server"
-}
-
-variable "cluster_ca_certificate" {
-  type        = string
-  description = "The public CA certificate of the AKS cluster"
-}
-
-variable "client_certificate" {
-  type        = string
-  description = "The client certificate for authenticating to the AKS cluster"
-}
-
-variable "client_key" {
-  type        = string
-  sensitive   = true
-  description = "The client key for authenticating to the AKS cluster"
 }
