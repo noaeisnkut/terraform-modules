@@ -29,7 +29,6 @@ resource "azurerm_public_ip" "alb" {
   sku                 = "Standard"
 }
 
-# 2. Install ALB Helm chart
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
   repository       = "oci://mcr.microsoft.com/application-lb/charts"
@@ -38,19 +37,18 @@ resource "helm_release" "alb_controller" {
   create_namespace = true
   version          = var.controller_version
 
-  set = [
-    {
-      name  = "albController.podIdentity.clientID"
-      value = azurerm_user_assigned_identity.alb_controller.client_id
-    },
-    {
-      name  = "albController.installGatewayApiCRDs"
-      value = "true"
-    }
-  ]
+  set {
+    name  = "albController.podIdentity.clientID"
+    value = azurerm_user_assigned_identity.alb_controller.client_id
+  }
+
+  set {
+    name  = "albController.installGatewayApiCRDs"
+    value = "true"
+  }
+
   depends_on = [azurerm_federated_identity_credential.alb_controller]
 }
-
 # 3. Install ALB CRDs explicitly via kubectl (null_resource)
 resource "null_resource" "install_alb_crds" {
   depends_on = [helm_release.alb_controller]
