@@ -56,19 +56,20 @@ resource "null_resource" "install_alb_crds" {
   provisioner "local-exec" {
     command = <<EOT
       echo "Applying ALB CRDs..."
-      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crds/applicationloadbalancer-crd.yaml
-      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crds/applicationloadbalancerroute-crd.yaml
-      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crds/gateway-crd.yaml
-      echo "CRDs applied!"
+      # Correct paths for the ALB Controller CRDs
+      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancers.yaml
+      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancerroutes.yaml
+      
+      echo "Waiting for API discovery..."
+      sleep 20
+      echo "CRDs ready!"
     EOT
   }
 }
 
-# 4. ALB resources (after CRDs exist)
-# 4. ALB resources
+
 resource "kubectl_manifest" "alb_resource" {
   for_each   = var.albs
-  # This depends on the CRD installation, but won't fail the 'plan'
   depends_on = [null_resource.install_alb_crds]
 
   yaml_body = yamlencode({
@@ -77,12 +78,10 @@ resource "kubectl_manifest" "alb_resource" {
     metadata = {
       name      = each.value.alb_name
       namespace = var.namespace
-      annotations = {
-        "alb.networking.azure.io/public-ip-id" = azurerm_public_ip.alb.id
-      }
     }
     spec = {
-      associations = [{ subnetId = each.value.subnet_id }]
+      # FIXED: Changed from object to string list
+      associations = [each.value.subnet_id]
     }
   })
 }
