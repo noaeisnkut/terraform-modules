@@ -93,7 +93,7 @@ resource "kubectl_manifest" "gateway" {
       name      = each.value.gateway_name
       namespace = var.namespace
       annotations = {
-        "alb.networking.azure.io/alb-id" = each.value.alb_name
+        "alb.networking.azure.io/alb-id" = "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.Network/applicationGateways/${each.value.alb_name}"
       }
     }
     spec = {
