@@ -27,7 +27,8 @@ resource "azurerm_role_assignment" "alb_identity_network" {
 # 2. Public IP for ALB
 # -------------------------------
 resource "azurerm_public_ip" "alb" {
-  name                = "${var.name}-public-ip"
+  for_each = var.albs
+  name                = "${each.value.alb_name}-public-ip"
   resource_group_name = var.resource_group_name
   location            = var.location
   allocation_method   = "Static"
