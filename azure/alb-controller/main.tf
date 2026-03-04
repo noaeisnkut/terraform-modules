@@ -121,7 +121,7 @@ resource "kubectl_manifest" "alb_routes" {
           gateway = alb_val.gateway_name
         }
       ]
-    ]) : "${pair.alb_key}-${pair.app_key}" => pair
+    ]) : "${pair.alb_key}${pair.app_key}" => pair
   }
 
   yaml_body = yamlencode({
