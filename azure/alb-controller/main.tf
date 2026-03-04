@@ -113,15 +113,21 @@ resource "kubectl_manifest" "gateway" {
     }
   })
 }
-# 6. Routes for each app - Only create if istio_bridge is provided
+# 6. Routes for each app
 resource "kubectl_manifest" "alb_routes" {
-  # This filter ensures we skip any ALB that has a null istio_bridge
-  for_each = { 
-    for k, v in var.albs : k => v 
-    if v.istio_bridge != null 
+  # This creates a flat map of "alb_name-app_name" 
+  for_each = {
+    for pair in flatten([
+      for alb_key, alb_val in var.albs : [
+        for app_key, app_val in alb_val.apps : {
+          alb_key = alb_key
+          app_key = app_key
+          app_val = app_val
+          gateway = alb_val.gateway_name
+        }
+      ]
+    ]) : "${pair.alb_key}-${pair.app_key}" => pair
   }
-  
-  depends_on = [kubectl_manifest.gateway]
 
   yaml_body = yamlencode({
     apiVersion = "alb.networking.azure.io/v1"
@@ -132,20 +138,20 @@ resource "kubectl_manifest" "alb_routes" {
     }
     spec = {
       gatewayRef = {
-        name      = each.value.gateway_name
+        name      = each.value.gateway
         namespace = var.namespace
       }
       backendRefs = [
         {
-          name      = each.value.istio_bridge.svc_name
-          namespace = each.value.istio_bridge.namespace
-          port      = each.value.istio_bridge.svc_port
+          name      = each.value.app_val.svc_name
+          namespace = each.value.app_val.namespace
+          port      = each.value.app_val.svc_port
           weight    = 100
         }
       ]
       rules = [
         {
-          host = each.value.istio_bridge.hostname
+          host = each.value.app_val.hostname
           path = "/*"
         }
       ]
