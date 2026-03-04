@@ -51,7 +51,6 @@ variable "albs" {
     alb_name     = string
     gateway_name = string
     subnet_id    = string
-    # Adding 'optional' prevents the error you just saw
     istio_bridge = optional(object({
       svc_name  = string
       namespace = string

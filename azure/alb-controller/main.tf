@@ -113,11 +113,14 @@ resource "kubectl_manifest" "gateway" {
     }
   })
 }
-# 6. Routes for each app
-# 6. Routes for each app
+# 6. Routes for each app - Only create if istio_bridge is provided
 resource "kubectl_manifest" "alb_routes" {
-  # Fix the loop to ensure we have access to the app's nested data
-  for_each   = var.albs
+  # This filter ensures we skip any ALB that has a null istio_bridge
+  for_each = { 
+    for k, v in var.albs : k => v 
+    if v.istio_bridge != null 
+  }
+  
   depends_on = [kubectl_manifest.gateway]
 
   yaml_body = yamlencode({
