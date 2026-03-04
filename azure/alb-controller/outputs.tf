@@ -3,7 +3,11 @@ output "identity_client_id" {
   value       = azurerm_user_assigned_identity.alb_controller.client_id
 }
 
-output "alb_public_ip" {
-  description = "The public IP assigned to the ALB"
-  value       = azurerm_public_ip.alb.ip_address
+output "albs" {
+  value = {
+    for k, v in var.albs : k => {
+      alb_name = v.alb_name
+      alb_ip   = azurerm_public_ip.alb[k].ip_address
+    }
+  }
 }
