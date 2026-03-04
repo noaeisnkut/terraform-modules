@@ -1,4 +1,6 @@
+# -------------------------------
 # 1. Identity for ALB
+# -------------------------------
 resource "azurerm_user_assigned_identity" "alb_controller" {
   name                = "${var.name}-identity"
   resource_group_name = var.resource_group_name
@@ -21,6 +23,9 @@ resource "azurerm_role_assignment" "alb_identity_network" {
   principal_id         = azurerm_user_assigned_identity.alb_controller.principal_id
 }
 
+# -------------------------------
+# 2. Public IP for ALB
+# -------------------------------
 resource "azurerm_public_ip" "alb" {
   name                = "${var.name}-public-ip"
   resource_group_name = var.resource_group_name
@@ -29,6 +34,9 @@ resource "azurerm_public_ip" "alb" {
   sku                 = "Standard"
 }
 
+# -------------------------------
+# 3. Helm ALB Controller
+# -------------------------------
 resource "helm_release" "alb_controller" {
   name             = "alb-controller"
   repository       = "oci://mcr.microsoft.com/application-lb/charts"
@@ -49,35 +57,13 @@ resource "helm_release" "alb_controller" {
 
   depends_on = [azurerm_federated_identity_credential.alb_controller]
 }
-# 3. Install ALB CRDs explicitly via kubectl (null_resource)
-resource "null_resource" "install_alb_crds" {
-  # Ensure the controller is there first
-  depends_on = [helm_release.alb_controller] 
 
-  provisioner "local-exec" {
-    command = <<EOT
-      echo "Starting ALB CRD Installation..."
-
-      # 1. Apply the ALB Infrastructure CRD
-      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancers.yaml
-      
-      # 2. Apply the Missing Route CRD (The one causing your specific error)
-      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancerroutes.yaml
-
-      # 3. Wait for the API to actually register them (This is the key to stopping the 'Invalid Kind' error)
-      echo "Waiting for CRDs to reach 'Established' state..."
-      kubectl wait --for condition=established --timeout=60s crd/applicationloadbalancers.alb.networking.azure.io
-      kubectl wait --for condition=established --timeout=60s crd/applicationloadbalancerroutes.alb.networking.azure.io
-      
-      echo "ALB CRDs successfully installed and established!"
-    EOT
-  
-  }
-}
-
+# -------------------------------
+# 4. ApplicationLoadBalancer resource
+# -------------------------------
 resource "kubectl_manifest" "alb_resource" {
   for_each   = var.albs
-  depends_on = [null_resource.install_alb_crds]
+  depends_on = [helm_release.alb_controller]
 
   yaml_body = yamlencode({
     apiVersion = "alb.networking.azure.io/v1"
@@ -87,13 +73,14 @@ resource "kubectl_manifest" "alb_resource" {
       namespace = var.namespace
     }
     spec = {
-      # FIXED: Changed from object to string list
       associations = [each.value.subnet_id]
     }
   })
 }
 
-# 5. Gateway resources
+# -------------------------------
+# 5. Gateway resource (Gateway API)
+# -------------------------------
 resource "kubectl_manifest" "gateway" {
   for_each   = var.albs
   depends_on = [kubectl_manifest.alb_resource]
@@ -119,9 +106,11 @@ resource "kubectl_manifest" "gateway" {
     }
   })
 }
-# 6. Routes for each app
+
+# -------------------------------
+# 6. HTTPRoute resources for each app (Gateway API)
+# -------------------------------
 resource "kubectl_manifest" "alb_routes" {
-  # This creates a flat map of "alb_name-app_name" 
   for_each = {
     for pair in flatten([
       for alb_key, alb_val in var.albs : [
@@ -136,31 +125,41 @@ resource "kubectl_manifest" "alb_routes" {
   }
 
   yaml_body = yamlencode({
-    apiVersion = "alb.networking.azure.io/v1"
-    kind       = "ApplicationLoadBalancerRoute"
+    apiVersion = "gateway.networking.k8s.io/v1beta1"
+    kind       = "HTTPRoute"
     metadata = {
       name      = "${each.key}-route"
       namespace = var.namespace
     }
     spec = {
-      gatewayRef = {
-        name      = each.value.gateway
-        namespace = var.namespace
-      }
-      backendRefs = [
+      parentRefs = [
         {
-          name      = each.value.app_val.svc_name
-          namespace = each.value.app_val.namespace
-          port      = each.value.app_val.svc_port
-          weight    = 100
+          name      = each.value.gateway
+          namespace = var.namespace
         }
       ]
       rules = [
         {
-          host = each.value.app_val.hostname
-          path = "/*"
+          matches = [
+            {
+              path = {
+                type  = "PathPrefix"
+                value = "/"
+              }
+            }
+          ]
+          backendRefs = [
+            {
+              name      = each.value.app_val.svc_name
+              namespace = each.value.app_val.namespace
+              port      = each.value.app_val.svc_port
+              weight    = 100
+            }
+          ]
         }
       ]
     }
   })
+
+  depends_on = [kubectl_manifest.gateway]
 }
