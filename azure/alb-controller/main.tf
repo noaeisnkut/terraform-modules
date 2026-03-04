@@ -51,22 +51,29 @@ resource "helm_release" "alb_controller" {
 }
 # 3. Install ALB CRDs explicitly via kubectl (null_resource)
 resource "null_resource" "install_alb_crds" {
-  depends_on = [helm_release.alb_controller]
+  # Ensure the controller is there first
+  depends_on = [helm_release.alb_controller] 
 
   provisioner "local-exec" {
     command = <<EOT
-      echo "Applying ALB CRDs..."
-      # Correct paths for the ALB Controller CRDs
+      echo "Starting ALB CRD Installation..."
+
+      # 1. Apply the ALB Infrastructure CRD
       kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancers.yaml
-      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancerroutes.yaml
       
-      echo "Waiting for API discovery..."
-      sleep 20
-      echo "CRDs ready!"
+      # 2. Apply the Missing Route CRD (The one causing your specific error)
+      kubectl apply -f https://raw.githubusercontent.com/Azure/application-load-balancer-controller/main/config/crd/bases/alb.networking.azure.io_applicationloadbalancerroutes.yaml
+
+      # 3. Wait for the API to actually register them (This is the key to stopping the 'Invalid Kind' error)
+      echo "Waiting for CRDs to reach 'Established' state..."
+      kubectl wait --for condition=established --timeout=60s crd/applicationloadbalancers.alb.networking.azure.io
+      kubectl wait --for condition=established --timeout=60s crd/applicationloadbalancerroutes.alb.networking.azure.io
+      
+      echo "ALB CRDs successfully installed and established!"
     EOT
+  
   }
 }
-
 
 resource "kubectl_manifest" "alb_resource" {
   for_each   = var.albs
