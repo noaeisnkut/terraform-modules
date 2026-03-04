@@ -65,11 +65,13 @@ resource "null_resource" "install_alb_crds" {
 }
 
 # 4. ALB resources (after CRDs exist)
-resource "kubernetes_manifest" "alb_resource" {
+# 4. ALB resources
+resource "kubectl_manifest" "alb_resource" {
   for_each   = var.albs
+  # This depends on the CRD installation, but won't fail the 'plan'
   depends_on = [null_resource.install_alb_crds]
 
-  manifest = {
+  yaml_body = yamlencode({
     apiVersion = "alb.networking.azure.io/v1"
     kind       = "ApplicationLoadBalancer"
     metadata = {
@@ -82,22 +84,22 @@ resource "kubernetes_manifest" "alb_resource" {
     spec = {
       associations = [{ subnetId = each.value.subnet_id }]
     }
-  }
+  })
 }
 
 # 5. Gateway resources
-resource "kubernetes_manifest" "gateway" {
+resource "kubectl_manifest" "gateway" {
   for_each   = var.albs
-  depends_on = [kubernetes_manifest.alb_resource]
+  depends_on = [kubectl_manifest.alb_resource]
 
-  manifest = {
+  yaml_body = yamlencode({
     apiVersion = "gateway.networking.k8s.io/v1"
     kind       = "Gateway"
     metadata = {
       name      = each.value.gateway_name
       namespace = var.namespace
       annotations = {
-        "alb.networking.azure.io/alb-id" = kubernetes_manifest.alb_resource[each.key].metadata[0].name
+        "alb.networking.azure.io/alb-id" = each.value.alb_name
       }
     }
     spec = {
@@ -109,15 +111,16 @@ resource "kubernetes_manifest" "gateway" {
         allowedRoutes = { namespaces = { from = "All" } }
       }]
     }
-  }
+  })
 }
-
 # 6. Routes for each app
-resource "kubernetes_manifest" "alb_routes" {
-  for_each   = { for alb_key, alb_val in var.albs : alb_key => alb_val.apps }
-  depends_on = [kubernetes_manifest.gateway]
+# 6. Routes for each app
+resource "kubectl_manifest" "alb_routes" {
+  # Fix the loop to ensure we have access to the app's nested data
+  for_each   = var.albs
+  depends_on = [kubectl_manifest.gateway]
 
-  manifest = {
+  yaml_body = yamlencode({
     apiVersion = "alb.networking.azure.io/v1"
     kind       = "ApplicationLoadBalancerRoute"
     metadata = {
@@ -126,7 +129,7 @@ resource "kubernetes_manifest" "alb_routes" {
     }
     spec = {
       gatewayRef = {
-        name      = kubernetes_manifest.gateway[each.key].metadata[0].name
+        name      = each.value.gateway_name
         namespace = var.namespace
       }
       backendRefs = [
@@ -144,5 +147,5 @@ resource "kubernetes_manifest" "alb_routes" {
         }
       ]
     }
-  }
+  })
 }

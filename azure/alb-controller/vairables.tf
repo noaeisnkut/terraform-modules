@@ -48,10 +48,16 @@ variable "gateway_name" {
 
 variable "albs" {
   type = map(object({
-    alb_name    = string
+    alb_name     = string
     gateway_name = string
-    subnet_id   = string
-    }))
+    subnet_id    = string
+    istio_bridge = object({
+      svc_name  = string
+      namespace = string
+      svc_port  = number
+      hostname  = string
+    })
+  }))
 }
 variable "cluster_endpoint" {
   type        = string
