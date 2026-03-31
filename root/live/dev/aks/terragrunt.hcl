@@ -1,5 +1,5 @@
 include "root" {
-  path = find_in_parent_folders()
+  path = find_in_parent_folders("root.hcl")
 }
 
 terraform {
@@ -7,20 +7,17 @@ terraform {
 }
 
 dependency "vnet" {
-  config_path = "../vnet"
+  config_path = "../Vnet"
 }
 
 inputs = {
   environment               = "dev"
   location                  = "East US"
-  resource_group_name       = "rg-flask-app-dev"
+  resource_group_name       = "rg-flask-app-dev" 
   cluster_name              = "cluster-dev-flask-app"
   node_provisioning_mode    = "Auto"
-  workload_sa_name          = "flask-app-sa"
-  workload_sa_namespace     = "default"
-  workload_identity_enabled = true
 
-  # VNET / Subnet
-  vnet_id    = dependency.vnet.outputs.vnet_id
-  subnet_id  = dependency.vnet.outputs.aks_subnet_id
+
+  vnet_id      = dependency.vnet.outputs.vnet_id
+  aks_subnet_id = dependency.vnet.outputs.subnet_ids["aks_subnet"]
 }

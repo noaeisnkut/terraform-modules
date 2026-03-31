@@ -1,5 +1,5 @@
 include "root" {
-  path = find_in_parent_folders()
+  path = find_in_parent_folders("root.hcl")
 }
 
 terraform {
@@ -14,9 +14,7 @@ inputs = {
     project    = "flask-app"
   }
 
-  # Map of vaults
   key_vaults = {
-    # Vault to actually create
     "flask-app-kv" = {
       location = "East US"
       secrets = {

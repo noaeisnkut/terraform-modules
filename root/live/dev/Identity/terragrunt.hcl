@@ -1,5 +1,5 @@
 include "root" {
-  path = find_in_parent_folders()
+  path = find_in_parent_folders("root.hcl")
 }
 
 terraform {
@@ -11,7 +11,7 @@ dependency "aks" {
 }
 
 dependency "vnet" {
-  config_path = "../vnet"
+  config_path = "../Vnet"
 }
 
 dependency "external-secrets" {
@@ -19,21 +19,15 @@ dependency "external-secrets" {
 }
 
 inputs = {
-  # Environment and naming
   env                 = "dev"
-  namespace           = "default"                 # Kubernetes namespace for SA
-  sa_name             = "flask-app-sa"           # Service Account name
-  resource_group_name = "rg-flask-app-dev"       # Matches your AKS RG
+  namespace           = "default"               
+  sa_name             = "flask-app-sa"           
+  resource_group_name = "rg-flask-app-dev"       
   location            = "East US"
 
-  # Azure resource IDs
-  storage_account_id  = dependency.vnet.outputs.storage_account_id # or pass storage account ID
+  storage_account_id  = "/subscriptions/8630b178-3a02-4f25-b248-508aada24bcc/resourceGroups/rg-second-clothes-project/providers/Microsoft.Storage/storageAccounts/flaskapppic"
   key_vault_id        = dependency.external-secrets.outputs.key_vault_ids["flask-app-kv"]
-
-  # AKS OIDC
   aks_oidc_issuer_url = dependency.aks.outputs.oidc_issuer_url
-
-  # Kubernetes provider info (optional if you want Terraform to create SA inside the cluster)
   kube_host                  = dependency.aks.outputs.kube_host
   kube_client_certificate    = dependency.aks.outputs.kube_client_certificate
   kube_client_key            = dependency.aks.outputs.kube_client_key

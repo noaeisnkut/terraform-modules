@@ -1,5 +1,5 @@
 include "root" {
-  path = find_in_parent_folders()
+  path = find_in_parent_folders("root.hcl")
 }
 
 terraform {
@@ -12,12 +12,11 @@ dependency "alb" {
 
 inputs = {
   zone_name           = "flask-app.com"
-  resource_group_name = "rg-dns-dev"
+  resource_group_name = "rg-flask-app-dev" 
+  location            = "East US"
 
-  records_map = {
-    "argocd"                  = dependency.alb.outputs.albs["alb1"].alb_public_ip
-    "my-fav-second-hand-shop" = dependency.alb.outputs.albs["alb1"].alb_public_ip
-  }
 
-  ttl = 300
+  oidc_issuer_url     = dependency.aks.outputs.oidc_issuer_url
+  subscription_id     = "8630b178-3a02-4f25-b248-508aada24bcc"
+  tenant_id           = "69bcbb10-71ee-4e74-8a20-20683db9e653" 
 }
