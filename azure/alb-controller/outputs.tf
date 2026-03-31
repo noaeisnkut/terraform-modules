@@ -6,8 +6,10 @@ output "identity_client_id" {
 output "albs" {
   value = {
     for k, v in var.albs : k => {
-      alb_name = v.alb_name
-      alb_ip   = azurerm_public_ip.alb[k].ip_address
+      alb_name     = v.alb_name
+      alb_id       = azurerm_application_load_balancer.alb[k].id
+      frontend_id  = azurerm_application_load_balancer_frontend.alb[k].id
     }
   }
 }
+

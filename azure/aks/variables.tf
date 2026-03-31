@@ -114,26 +114,6 @@ variable "enable_node_public_ip" {
   description = "Should nodes have public IP?"
 }
 
-variable "extra_node_pools_fixed" {
-  type = map(object({
-    vm_size    = string
-    node_count = number
-    subnet_id  = string
-  }))
-  default     = {}
-  description = "Fixed node count node pools"
-}
-
-variable "extra_node_pools_autoscale" {
-  type = map(object({
-    vm_size   = string
-    min_count = number
-    max_count = number
-    subnet_id = string
-  }))
-  default     = {}
-  description = "Autoscale enabled node pools"
-}
 
 variable "tags" {
   type        = map(string)

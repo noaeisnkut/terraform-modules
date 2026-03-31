@@ -13,8 +13,10 @@ resource "azurerm_subnet" "this" {
 
   name                 = each.key
   resource_group_name  = var.resource_group_name
-  virtual_network_name = var.vnet_name
-  address_prefixes     = each.value.address_prefixes
+  virtual_network_name = azurerm_virtual_network.this.name 
+  address_prefixes = [
+    cidrsubnet(var.address_space[0], 8, index(keys(var.subnets), each.key) + 1)
+  ]
 
   dynamic "delegation" {
     for_each = each.value.delegation != null ? [each.value.delegation] : []
@@ -27,5 +29,4 @@ resource "azurerm_subnet" "this" {
       }
     }
   }
-  depends_on = [ azurerm_virtual_network.this ]
 }

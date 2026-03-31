@@ -17,3 +17,23 @@ variable "ttl" {
   type        = number
   default     = 300
 }
+variable "location" {
+  description = "Azure location for DNS"
+  type        = string
+}
+
+variable "tenant_id" {
+  description = "Azure Tenant ID"
+  type        = string
+}
+
+variable "subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+}
+
+variable "oidc_issuer_url" {
+  description = "OIDC issuer URL for federated identity"
+  type        = string
+  
+}
